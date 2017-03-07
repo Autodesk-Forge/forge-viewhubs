@@ -4,7 +4,7 @@ namespace DataManagementSample.Code
 {
   public static class Config
   {
-    internal const string FORGE_OAUTH_SESSION = "ForgeOAuth";
+    internal const string FORGE_OAUTH = "ForgeOAuth";
 
     /// <summary>
     /// The client ID of this app

@@ -14,8 +14,8 @@ namespace DataManagementSample
     {
       get
       {
-        // simple login control by Session
-        return (Session[Code.Config.FORGE_OAUTH_SESSION] != null);
+        // check if there is a Cookie with the Access Token (this is a simple approach, not entirely safe)
+        return (Request.Cookies[Code.Config.FORGE_OAUTH] != null && !string.IsNullOrEmpty(Request.Cookies[Code.Config.FORGE_OAUTH].Value));
       }
     }
 
@@ -32,8 +32,6 @@ namespace DataManagementSample
           new Scope[] { Scope.DataRead });
         Response.Redirect(oauthUrl);
       }
-
-
     }
   }
 }

@@ -14,10 +14,5 @@ namespace DataManagementSample
     {
       GlobalConfiguration.Configure(Config.WebApiConfig.Register);
     }
-
-    protected void Application_PostAuthorizeRequest()
-    {
-      //HttpContext.Current.SetSessionStateBehavior(SessionStateBehavior.Required);
-    }
   }
 }
