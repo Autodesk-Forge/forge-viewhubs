@@ -1,11 +1,27 @@
-﻿using Autodesk.Forge;
+﻿/////////////////////////////////////////////////////////////////////
+// Copyright (c) Autodesk, Inc. All rights reserved
+// Written by Forge Partner Development
+//
+// Permission to use, copy, modify, and distribute this software in
+// object code form for any purpose and without fee is hereby granted,
+// provided that the above copyright notice appears in all copies and
+// that both that copyright notice and the limited warranty and
+// restricted rights notice below appear in all supporting
+// documentation.
+//
+// AUTODESK PROVIDES THIS PROGRAM "AS IS" AND WITH ALL FAULTS.
+// AUTODESK SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTY OF
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR USE.  AUTODESK, INC.
+// DOES NOT WARRANT THAT THE OPERATION OF THE PROGRAM WILL BE
+// UNINTERRUPTED OR ERROR FREE.
+/////////////////////////////////////////////////////////////////////
+
+using Autodesk.Forge;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Http;
 
 namespace DataManagementSample.WebAPI
@@ -17,23 +33,23 @@ namespace DataManagementSample.WebAPI
     public async Task<HttpResponseMessage> OAuthCallback(string code)
     {
       ThreeLeggedApi oauth = new ThreeLeggedApi();
-      dynamic bearer = await oauth.GettokenAsync(Code.Config. FORGE_CLIENT_ID, Code.Config. FORGE_CLIENT_SECRET, oAuthConstants.AUTHORIZATION_CODE, code, Code.Config.FORGE_CALLBACK_URL);
+      dynamic bearer = await oauth.GettokenAsync(Code.Config.FORGE_CLIENT_ID, Code.Config.FORGE_CLIENT_SECRET, oAuthConstants.AUTHORIZATION_CODE, code, Code.Config.FORGE_CALLBACK_URL);
       OAuth auth = JsonConvert.DeserializeObject<OAuth>(bearer.ToString());
 
       // You can store the oauth Access Token and Refresh Token on your own authentication approach
       // The Refresh Token can be used later to get a new Access Token
-      
+
 
       // For this basic sample, let's sent a Cooke to the end-user with the Access Token that only give
       // access to his/her own data, so no security breach (assuming a HTTPS connection), but there is a 
       // accountability concern here (as the end-user will use this token to perform operation on the app behalf)
-      HttpResponseMessage res = Request.CreateResponse( System.Net.HttpStatusCode.Moved /* rorce redirect */);
-      CookieHeaderValue cookie = new CookieHeaderValue(Code.Config.FORGE_OAUTH , auth.AccessToken);
+      HttpResponseMessage res = Request.CreateResponse(System.Net.HttpStatusCode.Moved /* rorce redirect */);
+      CookieHeaderValue cookie = new CookieHeaderValue(Code.Config.FORGE_OAUTH, auth.AccessToken);
       cookie.Expires = auth.ExpiresAt;
       cookie.Path = "/";
       res.Headers.AddCookies(new CookieHeaderValue[] { cookie });
       res.Headers.Location = new Uri("/", UriKind.Relative); // back to / (root, default)
-      
+
       return res;
     }
 
