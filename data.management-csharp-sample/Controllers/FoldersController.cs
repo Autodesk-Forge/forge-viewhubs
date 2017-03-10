@@ -75,8 +75,7 @@ namespace DataManagementSample.Controllers
 
       ProjectsApi projectApi = new ProjectsApi();
       projectApi.Configuration.AccessToken = AccessToken;
-      dynamic storageCreated = null;
-      storageCreated = await projectApi.PostStorageAsync(projectId, storage);
+      dynamic storageCreated = await projectApi.PostStorageAsync(projectId, storage);
 
       string[] storageIdParams = storageCreated.data.id.split('/');
       var objectName = storageIdParams[storageIdParams.Length - 1];
