@@ -77,7 +77,7 @@ namespace DataManagementSample.Controllers
       projectApi.Configuration.AccessToken = AccessToken;
       dynamic storageCreated = await projectApi.PostStorageAsync(projectId, storage);
 
-      string[] storageIdParams = storageCreated.data.id.split('/');
+      string[] storageIdParams = ((string)storageCreated.data.id).Split('/');
       var objectName = storageIdParams[storageIdParams.Length - 1];
       string[] bucketIdParams = storageIdParams[storageIdParams.Length - 2].Split(':');
       var bucketKey = bucketIdParams[bucketIdParams.Length - 1];
@@ -92,6 +92,29 @@ namespace DataManagementSample.Controllers
                objectName, (int)streamReader.BaseStream.Length, streamReader.BaseStream,
                "application/octet-stream");
       }
+
+      CreateItem item = new CreateItem(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0),
+        new CreateItemData(CreateItemData.TypeEnum.Items, 
+        new CreateStorageDataAttributes(file.FileName, 
+        new BaseAttributesExtensionObject("items:autodesk.core:File", "1.0", new JsonApiLink(string.Empty))), 
+        new CreateItemDataRelationships(
+          new CreateItemDataRelationshipsTip(
+            new CreateItemDataRelationshipsTipData(CreateItemDataRelationshipsTipData.TypeEnum.Versions, CreateItemDataRelationshipsTipData.IdEnum._1)), 
+          new CreateStorageDataRelationshipsTarget(
+            new StorageRelationshipsTargetData(StorageRelationshipsTargetData.TypeEnum.Folders, folderId)))), 
+        new System.Collections.Generic.List<CreateItemIncluded>()
+        {
+          new CreateItemIncluded(CreateItemIncluded.TypeEnum.Versions, CreateItemIncluded.IdEnum._1,     
+            new CreateStorageDataAttributes(file.FileName, new BaseAttributesExtensionObject("versions:autodesk.core:File", "1.0", new JsonApiLink(string.Empty))),  
+            new CreateItemRelationships(
+              new CreateItemRelationshipsStorage(
+                new CreateItemRelationshipsStorageData(CreateItemRelationshipsStorageData.TypeEnum.Objects, storageCreated.data.id))))
+        }
+       );
+
+      ItemsApi itemsApi = new ItemsApi();
+      itemsApi.Configuration.AccessToken = AccessToken;
+      dynamic newItem = itemsApi.PostItem(projectId, item);
 
       // cleanup
       File.Delete(fileSavePath);
