@@ -4,7 +4,7 @@ This is a work in progres, use carefully.
 
 # data.management-csharp-sample
 
-Basic 3-legged OAuth and Data Management access
+Basic 3-legged OAuth and Data Management API access
 
 ![Platforms](https://img.shields.io/badge/platform-Windows-lightgray.svg)
 ![.NET](https://img.shields.io/badge/.NET-4.5.2-blue.svg)
@@ -18,9 +18,9 @@ Basic 3-legged OAuth and Data Management access
 
 # Description
 
-This sample show a basic tree view with Hubs, Projects, Folders and Items. It does not use the ASP.NET native TreeView due its limitations, but the [jsTree](https://www.jstree.com/) library.
+This sample show a basic tree view with Hubs, Projects, Folders and Items. It does not use the ASP.NET native [TreeView](https://msdn.microsoft.com/en-us/library/system.web.ui.webcontrols.treeview.aspx) due its limitations, but the [jsTree](https://www.jstree.com/) library, that have support for menus, reload, among other features.
 
-At this point, the **Upload** workflow is not fully implemented.
+It allow upload of files to **Projects** and **Folders**. For new files, a version 1.0 is automatically created, following [this tutorial](https://developer.autodesk.com/en/docs/data/v2/tutorials/upload-file/), until step 5.
 
 ## Run Locally
 
@@ -33,7 +33,9 @@ Open the **web.config** file and adjust the Forge Client ID & Secret. If you pla
 </appSettings>
 ```
 
-Compile the solution, Visual Studio should download the NUGET packages ([Autodesk Forge](https://www.nuget.org/packages/Autodesk.Forge/), [RestSharp](https://www.nuget.org/packages/RestSharp) and [Newtonsoft.Json](https://www.nuget.org/packages/newtonsoft.json/))
+No need to adjust the **FORGE\_CALLBACK\_URL** appsetting to run it locally. Compile the solution, Visual Studio should download the NUGET packages ([Autodesk Forge](https://www.nuget.org/packages/Autodesk.Forge/), [RestSharp](https://www.nuget.org/packages/RestSharp) and [Newtonsoft.Json](https://www.nuget.org/packages/newtonsoft.json/))
+
+To use, right-click on a Project or Folder to **Upload** files. The tree view should reload once the file is uploaded. 
 
 # Deployment
 
