@@ -18,6 +18,8 @@
 
 using Autodesk.Forge;
 using Autodesk.Forge.Model;
+using Newtonsoft.Json.Linq;
+using RestSharp;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -90,7 +92,20 @@ namespace DataManagementSample.Controllers
       string urn = string.Empty;
       foreach (KeyValuePair<string, dynamic> hubInfo in new DynamicDictionaryItems(hubs.data))
       {
-        TreeNode hubNode = new TreeNode(hubInfo.Value.links.self.href, hubInfo.Value.attributes.name, "hubs", true);
+        string nodeType = "hubs";
+        switch ((string)hubInfo.Value.attributes.extension.type)
+        {
+          case "hubs:autodesk.core:Hub":
+            nodeType = "hubs";
+            break;
+          case "hubs:autodesk.a360:PersonalHub":
+            nodeType = "personalhub";
+            break;
+          case "hubs:autodesk.bim360:Account":
+            nodeType = "bim360hubs";
+            break;
+        }
+        TreeNode hubNode = new TreeNode(hubInfo.Value.links.self.href, (nodeType=="bim360hubs" ? "BIM 360 Projects" : hubInfo.Value.attributes.name), nodeType, true);
         nodes.Add(hubNode);
       }
 
@@ -110,6 +125,43 @@ namespace DataManagementSample.Controllers
       {
         TreeNode projectNode = new TreeNode(projectInfo.Value.links.self.href, projectInfo.Value.attributes.name, "projects", true);
         nodes.Add(projectNode);
+      }
+
+      if (hubId.Contains(ConfigVariables.FORGE_BIM360_ACCOUNT))
+      {
+        // the HubId on DM shouble be the same as the account ID, prefixed by b.
+
+        // BIM 360 is accessible via 2-legged tokens
+        TwoLeggedApi twoLeggedApi = new TwoLeggedApi();
+        dynamic bearer = await twoLeggedApi.AuthenticateAsync(ConfigVariables.FORGE_CLIENT_ID, ConfigVariables.FORGE_CLIENT_SECRET, "client_credentials", new Scope[] { Scope.AccountRead });
+
+        RestClient client = new RestClient("https://developer.api.autodesk.com");
+        RestRequest request = new RestRequest("/hq/v1/accounts/{account_id}/projects?limit=100", RestSharp.Method.GET);
+        request.AddParameter("account_id", ConfigVariables.FORGE_BIM360_ACCOUNT, ParameterType.UrlSegment);
+        request.AddHeader("Authorization", "Bearer " + bearer.access_token);
+        IRestResponse response = await client.ExecuteTaskAsync(request);
+
+        JArray bim360projects = JArray.Parse(response.Content);
+        foreach (JObject bim360project in bim360projects.Children<JObject>())
+        {
+          var projectName = bim360project.Property("name").Value.ToString();
+          var projectId = bim360project.Property("id").Value.ToString();
+
+          bool projectAlready = false;
+          foreach (TreeNode n in nodes)
+          {
+            if (n.id.Contains(projectId))
+            {
+              projectAlready = true;
+              break;
+            }
+          }
+          if (!projectAlready)
+          {
+            TreeNode node = new TreeNode(string.Empty, projectName, "projectunavailable", false);
+            nodes.Add(node);
+          }                
+        }
       }
 
       return nodes;
@@ -145,7 +197,19 @@ namespace DataManagementSample.Controllers
       var folderContents = await folderApi.GetFolderContentsAsync(projectId, folderId);
       foreach (KeyValuePair<string, dynamic> folderContentItem in new DynamicDictionaryItems(folderContents.data))
       {
-        TreeNode itemNode = new TreeNode(folderContentItem.Value.links.self.href, folderContentItem.Value.attributes.displayName, (string)folderContentItem.Value.type, ((string)folderContentItem.Value.type) == "folders");
+        string displayName = folderContentItem.Value.attributes.displayName;
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+          // BIM 360 related documents don't have displayName
+          // need to ask each one for a name
+          ItemsApi itemsApi = new ItemsApi();
+          itemsApi.Configuration.AccessToken = AccessToken;
+          dynamic item = await itemsApi.GetItemAsync(projectId, folderContentItem.Value.id);
+          displayName = item.included[0].attributes.displayName;
+        }
+
+        TreeNode itemNode = new TreeNode(folderContentItem.Value.links.self.href, displayName, (string)folderContentItem.Value.type, ((string)folderContentItem.Value.type) == "folders");
+
         nodes.Add(itemNode);
       }
 

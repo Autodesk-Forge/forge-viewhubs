@@ -33,7 +33,7 @@ namespace DataManagementSample.WebAPI
     public async Task<HttpResponseMessage> OAuthCallback(string code)
     {
       ThreeLeggedApi oauth = new ThreeLeggedApi();
-      dynamic bearer = await oauth.GettokenAsync(Code.Config.FORGE_CLIENT_ID, Code.Config.FORGE_CLIENT_SECRET, oAuthConstants.AUTHORIZATION_CODE, code, Code.Config.FORGE_CALLBACK_URL);
+      dynamic bearer = await oauth.GettokenAsync(ConfigVariables.FORGE_CLIENT_ID, ConfigVariables.FORGE_CLIENT_SECRET, oAuthConstants.AUTHORIZATION_CODE, code, ConfigVariables.FORGE_CALLBACK_URL);
       OAuth auth = JsonConvert.DeserializeObject<OAuth>(bearer.ToString());
 
       // You can store the oauth Access Token and Refresh Token on your own authentication approach
@@ -44,7 +44,7 @@ namespace DataManagementSample.WebAPI
       // access to his/her own data, so no security breach (assuming a HTTPS connection), but there is a 
       // accountability concern here (as the end-user will use this token to perform operation on the app behalf)
       HttpResponseMessage res = Request.CreateResponse(System.Net.HttpStatusCode.Moved /* rorce redirect */);
-      CookieHeaderValue cookie = new CookieHeaderValue(Code.Config.FORGE_OAUTH, auth.AccessToken);
+      CookieHeaderValue cookie = new CookieHeaderValue(ConfigVariables.FORGE_OAUTH, auth.AccessToken);
       cookie.Expires = auth.ExpiresAt;
       cookie.Path = "/";
       res.Headers.AddCookies(new CookieHeaderValue[] { cookie });

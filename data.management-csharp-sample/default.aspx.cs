@@ -18,7 +18,7 @@ namespace DataManagementSample
       get
       {
         // check if there is a Cookie with the Access Token (this is a simple approach, not entirely safe)
-        return (Request.Cookies[Code.Config.FORGE_OAUTH] != null && !string.IsNullOrEmpty(Request.Cookies[Code.Config.FORGE_OAUTH].Value));
+        return (Request.Cookies[ConfigVariables.FORGE_OAUTH] != null && !string.IsNullOrEmpty(Request.Cookies[ConfigVariables.FORGE_OAUTH].Value));
       }
     }
 
@@ -26,7 +26,7 @@ namespace DataManagementSample
     {
       get
       {
-        return Request.Cookies[Code.Config.FORGE_OAUTH].Value;
+        return Request.Cookies[ConfigVariables.FORGE_OAUTH].Value;
       }
     }
 
@@ -37,10 +37,10 @@ namespace DataManagementSample
         // redirect to Autodesk Accounts Sign-in page
         ThreeLeggedApi _threeLeggedApi = new ThreeLeggedApi();
         string oauthUrl = _threeLeggedApi.Authorize(
-          Code.Config.FORGE_CLIENT_ID,
+          ConfigVariables.FORGE_CLIENT_ID,
           oAuthConstants.CODE,
-          Code.Config.FORGE_CALLBACK_URL,
-          new Scope[] { Scope.DataRead, Scope.DataCreate });
+          ConfigVariables.FORGE_CALLBACK_URL,
+          new Scope[] { Scope.DataRead, Scope.DataCreate, Scope.AccountWrite });
         Response.Redirect(oauthUrl);
       }
 

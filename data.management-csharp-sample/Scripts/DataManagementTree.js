@@ -41,10 +41,19 @@ function prepareDataManagementTree() {
         'icon': 'glyphicon glyphicon-cloud'
       },
       'hubs': {
-        'icon': 'glyphicon glyphicon-inbox'
+        'icon': '/Images/a360hub.png'
+      },
+      'bim360hubs': {
+        'icon': '/Images/bim360.png'
+      },
+      'personalhub': {
+        'icon': '/Images/a360hub.png'
       },
       'projects': {
         'icon': 'glyphicon glyphicon-list-alt'
+      },
+      'projectunavailable': {
+        'icon': 'glyphicon glyphicon-remove'
       },
       'folders': {
         'icon': 'glyphicon glyphicon-folder-open'
@@ -59,7 +68,7 @@ function prepareDataManagementTree() {
 
   }).bind("activate_node.jstree", function (evt, data) {
     if (data != null && data.node != null && data.node.type == 'items') {
-
+      console.log(data);
     }
   });
 }
@@ -76,6 +85,20 @@ function dataManagementContextMenu(node) {
           action: function () {
             var treeNode = $('#dataManagementHubs').jstree(true).get_selected(true)[0];
             uploadFile(treeNode);
+          }
+        }
+      };
+      break;
+    case 'bim360hubs':
+      var treeNode = $('#dataManagementHubs').jstree(true).get_selected(true)[0];
+      if (treeNode.id.indexOf('/hubs/b.') == -1) return;
+      items = {
+        uploadFile: {
+          label: "Create project",
+          icon: "/Images/upload.png",
+          action: function () {
+            var treeNode = $('#dataManagementHubs').jstree(true).get_selected(true)[0];
+            alert('Not implemented - WIP');
           }
         }
       };

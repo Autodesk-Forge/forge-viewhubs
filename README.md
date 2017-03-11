@@ -24,22 +24,27 @@ It allow upload of files to **Projects** and **Folders**. For new files, a versi
 
 ## Run Locally
 
+#### Setup
+
 Open the **web.config** file and adjust the Forge Client ID & Secret. If you plan to deploy to Appharbor, configure the variables on the host settings (no need to change this web.config file).
 
 ```xml
 <appSettings>
-  <add key="FORGE_CLIENT_ID" value="" />
-  <add key="FORGE_CLIENT_SECRET" value="" />
+  <add key="FORGE_CLIENT_ID" value="" />  <add key="FORGE_CLIENT_SECRET" value="" />  <add key="FORGE_CALLBACK_URL" value="http://localhost:3000/api/forge/callback/oauth" />  <add key="FORGE_BIM360_ACCOUNT_ID" value="" />
 </appSettings>
 ```
 
-No need to adjust the **FORGE\_CALLBACK\_URL** appsetting to run it locally. Compile the solution, Visual Studio should download the NUGET packages ([Autodesk Forge](https://www.nuget.org/packages/Autodesk.Forge/), [RestSharp](https://www.nuget.org/packages/RestSharp) and [Newtonsoft.Json](https://www.nuget.org/packages/newtonsoft.json/))
+No need to adjust the **FORGE\_CALLBACK\_URL** appSettings to run it locally. Optionally, the **FORGE\_BIM360\_ACCOUNT\_ID** is the Account ID [provisioned](https://developer.autodesk.com/en/docs/bim360/v1/tutorials/get-access-to-account/) to this Client ID & Secret pair and it's used to list and manipulate projects, [see more](https://developer.autodesk.com/en/docs/bim360/v1/reference/http/).
 
-To use, right-click on a Project or Folder to **Upload** files. The tree view should reload once the file is uploaded. 
+Compile the solution, Visual Studio should download the NUGET packages ([Autodesk Forge](https://www.nuget.org/packages/Autodesk.Forge/), [RestSharp](https://www.nuget.org/packages/RestSharp) and [Newtonsoft.Json](https://www.nuget.org/packages/newtonsoft.json/)). 
+
+#### Usage
+
+To use, right-click on a Project or Folder to **Upload** files. The tree view should reload once the file is uploaded. If available, right-click on "BIM 360 Projects" to create new BIM 360 Projects.
 
 # Deployment
 
-For Appharbor deployment, following [this steps to configure your Forge Client ID & Secret](http://adndevblog.typepad.com/cloud_and_mobile/2017/01/deploying-forge-aspnet-samples-to-appharbor.html).
+This sample still a work in progress, not ready for production. For Appharbor deployment, following [this steps to configure your Forge Client ID & Secret](http://adndevblog.typepad.com/cloud_and_mobile/2017/01/deploying-forge-aspnet-samples-to-appharbor.html).
 
 # License
 

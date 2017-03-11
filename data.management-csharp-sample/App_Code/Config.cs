@@ -1,8 +1,8 @@
 ﻿using System.Web.Configuration;
 
-namespace DataManagementSample.Code
+namespace DataManagementSample
 {
-  public static class Config
+  public static class ConfigVariables
   {
     internal const string FORGE_OAUTH = "ForgeOAuth";
 
@@ -20,6 +20,11 @@ namespace DataManagementSample.Code
     /// The client secret of this app
     /// </summary>
     internal static string FORGE_CALLBACK_URL { get { return GetAppSetting("FORGE_CALLBACK_URL"); } }
+
+    /// <summary>
+    /// The BIM 360 Account ID provisioned to this client ID & secret
+    /// </summary>
+    internal static string FORGE_BIM360_ACCOUNT { get { return GetAppSetting("FORGE_BIM360_ACCOUNT_ID"); } }
 
     /// <summary>
     /// Read settings from web.config.
