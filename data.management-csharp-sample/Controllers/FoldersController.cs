@@ -93,10 +93,12 @@ namespace DataManagementSample.Controllers
                "application/octet-stream");
       }
 
+      string type = string.Format(":autodesk.{0}:File", (href.IndexOf("projects/b.") > 0 ? "bim360" : "core"));
+
       CreateItem item = new CreateItem(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0),
         new CreateItemData(CreateItemData.TypeEnum.Items, 
         new CreateStorageDataAttributes(file.FileName, 
-        new BaseAttributesExtensionObject("items:autodesk.core:File", "1.0", new JsonApiLink(string.Empty))), 
+        new BaseAttributesExtensionObject("items" + type, "1.0", new JsonApiLink(string.Empty))), 
         new CreateItemDataRelationships(
           new CreateItemDataRelationshipsTip(
             new CreateItemDataRelationshipsTipData(CreateItemDataRelationshipsTipData.TypeEnum.Versions, CreateItemDataRelationshipsTipData.IdEnum._1)), 
@@ -105,7 +107,7 @@ namespace DataManagementSample.Controllers
         new System.Collections.Generic.List<CreateItemIncluded>()
         {
           new CreateItemIncluded(CreateItemIncluded.TypeEnum.Versions, CreateItemIncluded.IdEnum._1,     
-            new CreateStorageDataAttributes(file.FileName, new BaseAttributesExtensionObject("versions:autodesk.core:File", "1.0", new JsonApiLink(string.Empty))),  
+            new CreateStorageDataAttributes(file.FileName, new BaseAttributesExtensionObject("versions" + type, "1.0", new JsonApiLink(string.Empty))),  
             new CreateItemRelationships(
               new CreateItemRelationshipsStorage(
                 new CreateItemRelationshipsStorageData(CreateItemRelationshipsStorageData.TypeEnum.Objects, storageCreated.data.id))))
