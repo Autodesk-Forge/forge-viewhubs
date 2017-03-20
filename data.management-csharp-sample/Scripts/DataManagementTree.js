@@ -18,6 +18,7 @@
 
 $(document).ready(function () {
   prepareDataManagementTree();
+  regiterFormChangeEvent();
 });
 
 function prepareDataManagementTree() {
@@ -108,15 +109,21 @@ function dataManagementContextMenu(node) {
   return items;
 }
 
-function uploadFile(node) {
+function uploadFile(theNode) {
   $('#hiddenUploadField').click();
+}
+
+function regiterFormChangeEvent() {
   $('#hiddenUploadField').change(function () {
+    var selectedNode = $('#dataManagementHubs').jstree(true).get_selected(true)[0];
+    if (this.files.length != 1) return;
+
     var file = this.files[0];
     //size = file.size;
     //type = file.type;
     var formData = new FormData();
     formData.append('fileToUpload', file);
-    formData.append('href', node.id);
+    formData.append('href', selectedNode.id);
 
     $.ajax({
       url: 'api/forge/folders/uploadObject',
@@ -125,7 +132,13 @@ function uploadFile(node) {
       contentType: false,
       type: 'POST',
       success: function (data) {
-        $('#dataManagementHubs').jstree(true).refresh_node(node);
+        $('#dataManagementHubs').jstree(true).refresh_node(selectedNode);
+      },
+      complete: function (data) {
+        $('#uploadFile')[0].reset();
+      },
+      fail: function (data) {
+        alert('Error uploading file.');
       }
     });
 
@@ -143,6 +156,5 @@ function uploadFile(node) {
      }
      xhr.send(formData);
      */
-
   });
 }

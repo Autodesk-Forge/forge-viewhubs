@@ -57,8 +57,27 @@ namespace DataManagementSample.Controllers
 
       string href = req.Params["href"];
       string[] idParams = href.Split('/');
-      string folderId = idParams[idParams.Length - 1];
-      string projectId = idParams[idParams.Length - 3];
+      string folderId = string.Empty;
+      string projectId = string.Empty;
+
+      ProjectsApi projectApi = new ProjectsApi();
+      projectApi.Configuration.AccessToken = AccessToken;
+
+      switch (idParams[idParams.Length - 2])
+      {
+        case "projects":
+          // need the root folder of this project
+          var project = await projectApi.GetProjectAsync(idParams[idParams.Length - 3], idParams[idParams.Length - 1]);
+          var rootFolderHref = project.data.relationships.rootFolder.data.id;
+
+          folderId = rootFolderHref;
+          projectId = idParams[idParams.Length - 1];
+          break;
+        case "folders":
+          folderId = idParams[idParams.Length - 1];
+          projectId = idParams[idParams.Length - 3];
+          break;
+      }
       HttpPostedFile file = req.Files[0];
 
       // save the file on the server
@@ -73,8 +92,6 @@ namespace DataManagementSample.Controllers
       CreateStorageData storageData = new CreateStorageData(CreateStorageData.TypeEnum.Objects, storageAtt, storageRel);
       CreateStorage storage = new CreateStorage(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), storageData);
 
-      ProjectsApi projectApi = new ProjectsApi();
-      projectApi.Configuration.AccessToken = AccessToken;
       dynamic storageCreated = await projectApi.PostStorageAsync(projectId, storage);
 
       string[] storageIdParams = ((string)storageCreated.data.id).Split('/');
