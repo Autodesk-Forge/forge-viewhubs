@@ -20,6 +20,7 @@ using Autodesk.Forge;
 using Autodesk.Forge.Model;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -75,6 +76,8 @@ namespace DataManagementSample.Controllers
             return await GetProjectContents(id);
           case "folders": // folders node selected/expanded, show folder contents
             return await GetFolderContents(id);
+          case "items":
+            return await GetItemVersions(id);
         }
       }
 
@@ -105,7 +108,7 @@ namespace DataManagementSample.Controllers
             nodeType = "bim360hubs";
             break;
         }
-        TreeNode hubNode = new TreeNode(hubInfo.Value.links.self.href, (nodeType=="bim360hubs" ? "BIM 360 Projects" : hubInfo.Value.attributes.name), nodeType, true);
+        TreeNode hubNode = new TreeNode(hubInfo.Value.links.self.href, (nodeType == "bim360hubs" ? "BIM 360 Projects" : hubInfo.Value.attributes.name), nodeType, true);
         nodes.Add(hubNode);
       }
 
@@ -160,7 +163,7 @@ namespace DataManagementSample.Controllers
           {
             TreeNode node = new TreeNode(string.Empty, projectName, "projectunavailable", false);
             nodes.Add(node);
-          }                
+          }
         }
       }
 
@@ -170,8 +173,8 @@ namespace DataManagementSample.Controllers
     private async Task<IList<TreeNode>> GetProjectContents(string href)
     {
       IList<TreeNode> nodes = new List<TreeNode>();
-      string[] idParams = href.Split('/');
 
+      string[] idParams = href.Split('/');
       string hubId = idParams[idParams.Length - 3];
       string projectId = idParams[idParams.Length - 1];
 
@@ -182,15 +185,14 @@ namespace DataManagementSample.Controllers
 
       return await GetFolderContents(rootFolderHref);
     }
-    
+
     private async Task<IList<TreeNode>> GetFolderContents(string href)
     {
       IList<TreeNode> nodes = new List<TreeNode>();
-      string[] idParams = href.Split('/');
 
+      string[] idParams = href.Split('/');
       string folderId = idParams[idParams.Length - 1];
       string projectId = idParams[idParams.Length - 3];
-
 
       FoldersApi folderApi = new FoldersApi();
       folderApi.Configuration.AccessToken = AccessToken;
@@ -208,9 +210,32 @@ namespace DataManagementSample.Controllers
           displayName = item.included[0].attributes.displayName;
         }
 
-        TreeNode itemNode = new TreeNode(folderContentItem.Value.links.self.href, displayName, (string)folderContentItem.Value.type, ((string)folderContentItem.Value.type) == "folders");
+        TreeNode itemNode = new TreeNode(folderContentItem.Value.links.self.href, displayName, (string)folderContentItem.Value.type, true);// ((string)folderContentItem.Value.type) == "folders");
 
         nodes.Add(itemNode);
+      }
+
+      return nodes;
+    }
+
+    private async Task<IList<TreeNode>> GetItemVersions(string href)
+    {
+      IList<TreeNode> nodes = new List<TreeNode>();
+
+      string[] idParams = href.Split('/');
+      string itemId = idParams[idParams.Length - 1];
+      string projectId = idParams[idParams.Length - 3];
+
+      ItemsApi itemApi = new ItemsApi();
+      itemApi.Configuration.AccessToken = AccessToken;
+      var versions = await itemApi.GetItemVersionsAsync(projectId, itemId);
+
+      foreach (KeyValuePair<string, dynamic> version in new DynamicDictionaryItems(versions.data))
+      {
+        DateTime versionDate = version.Value.attributes.lastModifiedTime;
+        string urn = (string)version.Value.relationships.derivatives.data.id;
+        TreeNode node = new TreeNode(urn, versionDate.ToString("dd/MM/yy HH:mm:ss"), "versions", false);
+        nodes.Add(node);
       }
 
       return nodes;

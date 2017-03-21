@@ -44,7 +44,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Autodesk.Forge, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Autodesk.Forge.1.0.0\lib\net45\Autodesk.Forge.dll</HintPath>
+      <HintPath>..\packages\Autodesk.Forge.1.0.1\lib\net45\Autodesk.Forge.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -91,6 +91,7 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\bootstrap-select.min.css" />
     <Content Include="Content\bootstrap-theme.min.css" />
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\jsTree\docs.css" />
@@ -104,12 +105,23 @@
     <Content Include="Content\jsTree\themes\default\style.css" />
     <Content Include="Content\jsTree\themes\default\style.min.css" />
     <Content Include="Content\jsTree\themes\default\throbber.gif" />
+    <Content Include="Content\Main.css" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="Images\a360hub.png" />
+    <Content Include="Images\autodesk-forge.png" />
+    <Content Include="Images\autodesk-logo.png" />
+    <Content Include="Images\bim360.png" />
+    <Content Include="Images\github-logo.png" />
+    <Content Include="Images\icon-model-derive.svg" />
+    <Content Include="Images\refresh.png" />
+    <Content Include="Images\upload.png" />
     <Content Include="packages.config" />
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
     <Content Include="fonts\glyphicons-halflings-regular.ttf" />
     <Content Include="fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Scripts\ForgeViewer.js" />
+    <Content Include="Scripts\Libraries\bootstrap-select.min.js" />
     <Content Include="Scripts\Libraries\bootstrap.min.js" />
     <Content Include="Scripts\DataManagementTree.js" />
     <Content Include="Scripts\Libraries\jquery-3.1.1.min.js" />
@@ -128,13 +140,17 @@
   <ItemGroup>
     <Content Include="default.aspx" />
     <Content Include="Global.asax" />
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="App_Code\Config.cs" />
+    <Compile Include="Controllers\BIM360Controller.cs" />
     <Compile Include="Controllers\FoldersController.cs" />
     <Compile Include="Controllers\DataManagementTreeController.cs" />
+    <Compile Include="Controllers\Utils.cs" />
     <Compile Include="default.aspx.cs">
       <DependentUpon>default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -149,6 +165,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="App_Code\BIM360\" />
     <Folder Include="App_Data\" />
     <Folder Include="Models\" />
   </ItemGroup>

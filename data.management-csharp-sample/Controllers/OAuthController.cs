@@ -28,6 +28,25 @@ namespace DataManagementSample.WebAPI
 {
   public class OAuthController : ApiController
   {
+    private string AccessToken
+    {
+      get
+      {
+        var cookies = Request.Headers.GetCookies();
+        var accessToken = cookies[0].Cookies[0].Value;
+        return accessToken;
+      }
+    }
+
+    [HttpGet]
+    [Route("api/forge/oauth/token")]
+    public async Task<string> Get()
+    {
+      // Needs improvements...
+      // ToDo
+      return AccessToken;
+    }
+
     [HttpGet]
     [Route("api/forge/callback/oauth")] // see Web.Config FORGE_CALLBACK_URL variable
     public async Task<HttpResponseMessage> OAuthCallback(string code)

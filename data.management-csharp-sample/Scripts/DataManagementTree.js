@@ -18,7 +18,8 @@
 
 $(document).ready(function () {
   prepareDataManagementTree();
-  regiterFormChangeEvent();
+  registerFormChangeEvent();
+  registerCreateProject();
 });
 
 function prepareDataManagementTree() {
@@ -61,6 +62,9 @@ function prepareDataManagementTree() {
       },
       'items': {
         'icon': 'glyphicon glyphicon-file'
+      },
+      'versions': {
+        'icon': 'glyphicon glyphicon-time'
       }
     },
     "plugins": ["types", "state", "sort", "contextmenu"],
@@ -68,8 +72,8 @@ function prepareDataManagementTree() {
   }).on('loaded.jstree', function () {
 
   }).bind("activate_node.jstree", function (evt, data) {
-    if (data != null && data.node != null && data.node.type == 'items') {
-      console.log(data);
+    if (data != null && data.node != null && data.node.type == 'versions') {
+      launchViewer(data.node.id);
     }
   });
 }
@@ -99,7 +103,14 @@ function dataManagementContextMenu(node) {
           icon: "/Images/upload.png",
           action: function () {
             var treeNode = $('#dataManagementHubs').jstree(true).get_selected(true)[0];
-            alert('Not implemented - WIP');
+
+            var start = new Date(); // today
+            var end = new Date(start);
+            end.setDate(end.getDate() + 30);
+            $('#startdate').val(start.toDateInputValue());
+            $('#enddate').val(end.toDateInputValue());
+
+            $("#createBIM360ProjectForm").modal();
           }
         }
       };
@@ -109,11 +120,18 @@ function dataManagementContextMenu(node) {
   return items;
 }
 
+// source: http://stackoverflow.com/questions/6982692/html5-input-type-date-default-value-to-today
+Date.prototype.toDateInputValue = (function () {
+  var local = new Date(this);
+  local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+  return local.toJSON().slice(0, 10);
+});
+
 function uploadFile(theNode) {
   $('#hiddenUploadField').click();
 }
 
-function regiterFormChangeEvent() {
+function registerFormChangeEvent() {
   $('#hiddenUploadField').change(function () {
     var selectedNode = $('#dataManagementHubs').jstree(true).get_selected(true)[0];
     if (this.files.length != 1) return;
@@ -157,4 +175,41 @@ function regiterFormChangeEvent() {
      xhr.send(formData);
      */
   });
+}
+
+function registerCreateProject() {
+  $("#createBIM360Project").click(function () {
+    $('#createBIM360ProjectForm').modal('toggle');
+    jQuery.post({
+      url: '/api/forge/BIM360/project',
+      data: serializeFormJSON($('#newBIM360Project')),
+      success: function(data){
+        $("#newBIM360ProjectName").val('');
+        $('#newBIM360Project')[0].reset();
+
+        var selectedNode = $('#dataManagementHubs').jstree(true).get_selected(true)[0];
+        $('#dataManagementHubs').jstree(true).refresh_node(selectedNode);
+      },
+      fail: function(error){
+        alert('Cannot create project.');
+      }
+    });
+  });
+}
+
+// Credits to https://jsfiddle.net/gabrieleromanato/bynaK/
+function serializeFormJSON(form) {
+  var o = {};
+  var a = form.serializeArray();
+  $.each(a, function () {
+    if (o[this.name]) {
+      if (!o[this.name].push) {
+        o[this.name] = [o[this.name]];
+      }
+      o[this.name].push(this.value || '');
+    } else {
+      o[this.name] = this.value || '';
+    }
+  });
+  return o;
 }
