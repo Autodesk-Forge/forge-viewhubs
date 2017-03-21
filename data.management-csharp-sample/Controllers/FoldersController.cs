@@ -114,7 +114,7 @@ namespace DataManagementSample.Controllers
 
       CreateItem item = new CreateItem(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0),
         new CreateItemData(CreateItemData.TypeEnum.Items, 
-        new CreateStorageDataAttributes(file.FileName, 
+        new CreateItemDataAttributes(file.FileName, 
         new BaseAttributesExtensionObject("items" + type, "1.0", new JsonApiLink(string.Empty))), 
         new CreateItemDataRelationships(
           new CreateItemDataRelationshipsTip(
