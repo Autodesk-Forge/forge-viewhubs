@@ -17,8 +17,8 @@
   <link href="Content/Main.css" rel="stylesheet" />
 
   <link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/style.min.css" type="text/css">
-  <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/three.min.js"></script>
-  <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/viewer3D.min.js"></script>
+  <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/three.js"></script>
+  <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/viewer3D.js"></script>
 </head>
 <body>
   <form id="form1" runat="server"></form>

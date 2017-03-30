@@ -126,9 +126,6 @@
     <Content Include="Scripts\DataManagementTree.js" />
     <Content Include="Scripts\Libraries\jquery-3.1.1.min.js" />
     <Content Include="Scripts\Libraries\jsTree3\jstree.min.js" />
-    <Content Include="Views\Shared\_jsTreeDemo.cshtml" />
-    <Content Include="Views\jsTree3\Demo.cshtml" />
-    <Content Include="Views\jsTree3\AJAXDemo.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -165,7 +162,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="App_Code\BIM360\" />
     <Folder Include="App_Data\" />
     <Folder Include="Models\" />
   </ItemGroup>

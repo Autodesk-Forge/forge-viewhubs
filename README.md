@@ -1,10 +1,6 @@
-# Attention
-
-This is a work in progres, use carefully.
-
 # data.management-csharp-sample
 
-Basic 3-legged OAuth and Data Management API access
+Basic 3-legged OAuth and Data Management API access to A360 and BIM 360 Docs projects, files and versions. 
 
 ![Platforms](https://img.shields.io/badge/platform-Windows-lightgray.svg)
 ![.NET](https://img.shields.io/badge/.NET-4.5.2-blue.svg)
@@ -49,6 +45,10 @@ To use, right-click on a Project or Folder to **Upload** files. The tree view sh
 # Deployment
 
 This sample still a work in progress, not ready for production. For Appharbor deployment, following [this steps to configure your Forge Client ID & Secret](http://adndevblog.typepad.com/cloud_and_mobile/2017/01/deploying-forge-aspnet-samples-to-appharbor.html).
+
+# Limitations
+
+This sample is not yet handling refresh tokens. Additionally, the access tokens are saved on Cookies and used on each request (WebAPI). On a production environment, the access token & refresh token should be safelly stored and not exposed to endusers. In this scenario, assuming a HTTPS connection, this is a not a security breach, as it only gives access to the current user information.
 
 # License
 

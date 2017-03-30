@@ -23,6 +23,7 @@ using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web.Http;
 
@@ -210,7 +211,7 @@ namespace DataManagementSample.Controllers
           displayName = item.included[0].attributes.displayName;
         }
 
-        TreeNode itemNode = new TreeNode(folderContentItem.Value.links.self.href, displayName, (string)folderContentItem.Value.type, true);// ((string)folderContentItem.Value.type) == "folders");
+        TreeNode itemNode = new TreeNode(folderContentItem.Value.links.self.href, displayName, (string)folderContentItem.Value.type, true);
 
         nodes.Add(itemNode);
       }
@@ -229,11 +230,12 @@ namespace DataManagementSample.Controllers
       ItemsApi itemApi = new ItemsApi();
       itemApi.Configuration.AccessToken = AccessToken;
       var versions = await itemApi.GetItemVersionsAsync(projectId, itemId);
-
       foreach (KeyValuePair<string, dynamic> version in new DynamicDictionaryItems(versions.data))
       {
         DateTime versionDate = version.Value.attributes.lastModifiedTime;
-        string urn = (string)version.Value.relationships.derivatives.data.id;
+        string urn = string.Empty;
+        try { urn = (string)version.Value.relationships.derivatives.data.id; }
+        catch { urn = "not_available"; } // some BIM 360 versions don't have viewable
         TreeNode node = new TreeNode(urn, versionDate.ToString("dd/MM/yy HH:mm:ss"), "versions", false);
         nodes.Add(node);
       }
