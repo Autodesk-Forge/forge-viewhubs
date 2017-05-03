@@ -30,11 +30,11 @@ Open the **web.config** file and adjust the Forge Client ID & Secret. If you pla
 
 ```xml
 <appSettings>
-  <add key="FORGE_CLIENT_ID" value="" />  <add key="FORGE_CLIENT_SECRET" value="" />  <add key="FORGE_CALLBACK_URL" value="http://localhost:3000/api/forge/callback/oauth" />  <add key="FORGE_BIM360_ACCOUNT_ID" value="" />
+  <add key="FORGE_CLIENT_ID" value="" />  <add key="FORGE_CLIENT_SECRET" value="" />  <add key="FORGE_CALLBACK_URL" value="http://localhost:3000/api/forge/callback/oauth" />
 </appSettings>
 ```
 
-No need to adjust the **FORGE\_CALLBACK\_URL** appSettings to run it locally. Optionally, the **FORGE\_BIM360\_ACCOUNT\_ID** is the Account ID [provisioned](https://developer.autodesk.com/en/docs/bim360/v1/tutorials/get-access-to-account/) to this Client ID & Secret pair and it's used to list and manipulate projects, [see more](https://developer.autodesk.com/en/docs/bim360/v1/reference/http/).
+No need to adjust the **FORGE\_CALLBACK\_URL** appSettings to run it locally.
 
 Compile the solution, Visual Studio should download the NUGET packages ([Autodesk Forge](https://www.nuget.org/packages/Autodesk.Forge/), [RestSharp](https://www.nuget.org/packages/RestSharp) and [Newtonsoft.Json](https://www.nuget.org/packages/newtonsoft.json/)). 
 
