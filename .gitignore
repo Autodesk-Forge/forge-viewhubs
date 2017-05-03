@@ -3,6 +3,7 @@
 
 Web.Keys.Config
 App_Data/
+Thumbs.db
 
 # User-specific files
 *.suo

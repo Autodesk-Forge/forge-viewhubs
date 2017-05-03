@@ -52,7 +52,11 @@ namespace DataManagementSample.Controllers
       get
       {
         var cookies = Request.Headers.GetCookies();
-        var accessToken = cookies[0].Cookies[0].Value;
+        var accessToken = string.Empty;
+        foreach (var c in cookies)
+          foreach (var v in c.Cookies)
+            if (v.Name.Equals("ForgeOAuth"))
+              accessToken = v.Value;
         return accessToken;
       }
     }
@@ -131,7 +135,7 @@ namespace DataManagementSample.Controllers
         nodes.Add(projectNode);
       }
 
-      if (hubId.Contains(ConfigVariables.FORGE_BIM360_ACCOUNT))
+      if (hubId.IndexOf("b.")>-1)
       {
         // the HubId on DM shouble be the same as the account ID, prefixed by b.
 
@@ -139,31 +143,36 @@ namespace DataManagementSample.Controllers
         TwoLeggedApi twoLeggedApi = new TwoLeggedApi();
         dynamic bearer = await twoLeggedApi.AuthenticateAsync(ConfigVariables.FORGE_CLIENT_ID, ConfigVariables.FORGE_CLIENT_SECRET, "client_credentials", new Scope[] { Scope.AccountRead });
 
+        string accountId = hubId.Remove(0, 2);
+
         RestClient client = new RestClient("https://developer.api.autodesk.com");
         RestRequest request = new RestRequest("/hq/v1/accounts/{account_id}/projects?limit=100", RestSharp.Method.GET);
-        request.AddParameter("account_id", ConfigVariables.FORGE_BIM360_ACCOUNT, ParameterType.UrlSegment);
+        request.AddParameter("account_id", accountId, ParameterType.UrlSegment);
         request.AddHeader("Authorization", "Bearer " + bearer.access_token);
         IRestResponse response = await client.ExecuteTaskAsync(request);
 
-        JArray bim360projects = JArray.Parse(response.Content);
-        foreach (JObject bim360project in bim360projects.Children<JObject>())
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
-          var projectName = bim360project.Property("name").Value.ToString();
-          var projectId = bim360project.Property("id").Value.ToString();
+          JArray bim360projects = JArray.Parse(response.Content);
+          foreach (JObject bim360project in bim360projects.Children<JObject>())
+          {
+            var projectName = bim360project.Property("name").Value.ToString();
+            var projectId = bim360project.Property("id").Value.ToString();
 
-          bool projectAlready = false;
-          foreach (TreeNode n in nodes)
-          {
-            if (n.id.Contains(projectId))
+            bool projectAlready = false;
+            foreach (TreeNode n in nodes)
             {
-              projectAlready = true;
-              break;
+              if (n.id.Contains(projectId))
+              {
+                projectAlready = true;
+                break;
+              }
             }
-          }
-          if (!projectAlready)
-          {
-            TreeNode node = new TreeNode(string.Empty, projectName, "projectunavailable", false);
-            nodes.Add(node);
+            if (!projectAlready)
+            {
+              TreeNode node = new TreeNode(string.Empty, projectName, "projectunavailable", false);
+              nodes.Add(node);
+            }
           }
         }
       }

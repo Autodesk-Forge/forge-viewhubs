@@ -106,11 +106,13 @@
     <Content Include="Content\jsTree\themes\default\style.min.css" />
     <Content Include="Content\jsTree\themes\default\throbber.gif" />
     <Content Include="Content\Main.css" />
+    <Content Include="favicon.ico" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Images\a360hub.png" />
     <Content Include="Images\autodesk-forge.png" />
     <Content Include="Images\autodesk-logo.png" />
     <Content Include="Images\bim360.png" />
+    <Content Include="Images\excel-xls-icon.png" />
     <Content Include="Images\github-logo.png" />
     <Content Include="Images\icon-model-derive.svg" />
     <Content Include="Images\refresh.png" />
@@ -120,10 +122,14 @@
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
     <Content Include="fonts\glyphicons-halflings-regular.ttf" />
     <Content Include="fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Scripts\ExcelExtension.js" />
     <Content Include="Scripts\ForgeViewer.js" />
+    <Content Include="Scripts\Libraries\Blob.js" />
     <Content Include="Scripts\Libraries\bootstrap-select.min.js" />
     <Content Include="Scripts\Libraries\bootstrap.min.js" />
     <Content Include="Scripts\DataManagementTree.js" />
+    <Content Include="Scripts\Libraries\clipboard.min.js" />
+    <Content Include="Scripts\Libraries\FileSaver.min.js" />
     <Content Include="Scripts\Libraries\jquery-3.1.1.min.js" />
     <Content Include="Scripts\Libraries\jsTree3\jstree.min.js" />
     <None Include="Web.Debug.config">
@@ -137,6 +143,7 @@
   <ItemGroup>
     <Content Include="default.aspx" />
     <Content Include="Global.asax" />
+    <Content Include="Scripts\Libraries\xlsx.core.min.js" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>

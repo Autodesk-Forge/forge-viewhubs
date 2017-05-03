@@ -27,3 +27,10 @@ body {
   margin-left: 250px;
   background-color: #F0F0F0;
 }
+
+.toolbarExportExcel {
+  background-image: url(/Images/excel-xls-icon.png);
+  background-size: 24px;
+  background-repeat: no-repeat;
+  background-position: center;
+}

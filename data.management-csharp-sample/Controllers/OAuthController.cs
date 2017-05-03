@@ -33,7 +33,11 @@ namespace DataManagementSample.WebAPI
       get
       {
         var cookies = Request.Headers.GetCookies();
-        var accessToken = cookies[0].Cookies[0].Value;
+        var accessToken = string.Empty;
+        foreach (var c in cookies)
+          foreach (var v in c.Cookies)
+            if (v.Name.Equals("ForgeOAuth"))
+              accessToken = v.Value;
         return accessToken;
       }
     }
@@ -45,6 +49,13 @@ namespace DataManagementSample.WebAPI
       // Needs improvements...
       // ToDo
       return AccessToken;
+    }
+
+    [HttpGet]
+    [Route("api/forge/oauth/clientID")]
+    public async Task<string> GetClientID()
+    {
+      return ConfigVariables.FORGE_CLIENT_ID;
     }
 
     [HttpGet]

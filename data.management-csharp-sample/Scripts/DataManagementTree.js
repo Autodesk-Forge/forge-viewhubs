@@ -22,6 +22,8 @@ $(document).ready(function () {
   registerCreateProject();
 });
 
+var haveBIM360Hub = false;
+
 function prepareDataManagementTree() {
   $('#dataManagementHubs').jstree({
     'core': {
@@ -32,6 +34,24 @@ function prepareDataManagementTree() {
         'multiple': false,
         "data": function (node) {
           return { "id": node.id };
+        },
+        "success": function (nodes) {
+          nodes.forEach(function (n) {
+            if (n.type === 'bim360hubs' && n.id.indexOf('b.') > 0)
+              haveBIM360Hub = true;
+          });
+
+          if (!haveBIM360Hub) {
+            $.getJSON("/api/forge/oauth/clientID", function (clientID) {
+              $("#ClientID").val(clientID);
+              $("#provisionAccountModal").modal();
+              $("#provisionAccountSave").click(function () {
+                $('#provisionAccountModal').modal('toggle');
+                $('#dataManagementHubs').jstree(true).refresh();
+              });
+              haveBIM360Hub = true;
+            });
+          }
         }
       }
     },
@@ -73,8 +93,9 @@ function prepareDataManagementTree() {
 
   }).bind("activate_node.jstree", function (evt, data) {
     if (data != null && data.node != null && data.node.type == 'versions') {
-      if (data.node.id === 'not_available') { alert('No viewable available for this version'); return;}
-      launchViewer(data.node.id);
+      if (data.node.id === 'not_available') { alert('No viewable available for this version'); return; }
+      var parent_node = $('#dataManagementHubs').jstree(true).get_node(data.node.parent);
+      launchViewer(data.node.id, parent_node.text);
     }
   });
 }
@@ -110,6 +131,7 @@ function dataManagementContextMenu(node) {
             end.setDate(end.getDate() + 30);
             $('#startdate').val(start.toDateInputValue());
             $('#enddate').val(end.toDateInputValue());
+            $('#hubId').val(treeNode.id.split('b.')[1]);
 
             $("#createBIM360ProjectForm").modal();
           }
@@ -184,14 +206,14 @@ function registerCreateProject() {
     jQuery.post({
       url: '/api/forge/BIM360/project',
       data: serializeFormJSON($('#newBIM360Project')),
-      success: function(data){
+      success: function (data) {
         $("#newBIM360ProjectName").val('');
         $('#newBIM360Project')[0].reset();
 
         var selectedNode = $('#dataManagementHubs').jstree(true).get_selected(true)[0];
         $('#dataManagementHubs').jstree(true).refresh_node(selectedNode);
       },
-      fail: function(error){
+      fail: function (error) {
         alert('Cannot create project.');
       }
     });

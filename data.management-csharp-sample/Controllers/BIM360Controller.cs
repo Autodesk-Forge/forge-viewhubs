@@ -66,8 +66,8 @@ namespace DataManagementSample.Controllers
       [JsonConverter(typeof(CustomDateTimeConverter))]
       public DateTime EndDate { get; set; }
 
-     //[JsonProperty("language")]
-      //public string Language { get; set; }
+      [JsonProperty("hubId")]
+      public string HubId { get; set; }
 
     }
 
@@ -82,9 +82,9 @@ namespace DataManagementSample.Controllers
 
       RestClient client = new RestClient("https://developer.api.autodesk.com");
       RestRequest request = new RestRequest("/hq/v1/accounts/{account_id}/projects", Method.POST);
-      request.AddParameter("account_id", ConfigVariables.FORGE_BIM360_ACCOUNT, ParameterType.UrlSegment);
+      request.AddParameter("account_id", newProject.HubId, ParameterType.UrlSegment);
       request.AddHeader("Authorization", "Bearer " + bearer.access_token);
-      request.AddParameter("application/json", body , ParameterType.RequestBody);
+      request.AddParameter("application/json", body, ParameterType.RequestBody);
       IRestResponse response = await client.ExecuteTaskAsync(request);
 
       return response.Content; // ToDo

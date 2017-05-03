@@ -21,12 +21,14 @@
 // https://developer.autodesk.com/en/docs/viewer/v2/tutorials/basic-application/
 
 var viewerApp;
+var fileName;
 
-function launchViewer(urn) {
+function launchViewer(urn, name) {
   var options = {
     env: 'AutodeskProduction',
-    getAccessToken: getAccessToken
+    getAccessToken: getForgeToken
   };
+  fileName = name;
   var documentId = 'urn:' + urn;
   Autodesk.Viewing.Initializer(options, function onInitialized() {
     viewerApp = new Autodesk.Viewing.ViewingApplication('forgeViewer');
@@ -50,6 +52,8 @@ function onDocumentLoadSuccess(doc) {
 
   // Choose any of the avialble viewables
   viewerApp.selectItem(viewables[0].data, onItemLoadSuccess, onItemLoadFail);
+
+  NOP_VIEWER.loadExtension('Autodesk.Sample.ExportExcel', { 'fileName': fileName ,'getToken': getForgeToken, 'urn': doc.myPath });
 }
 
 function onDocumentLoadFailure(viewerErrorCode) {}
@@ -58,15 +62,14 @@ function onItemLoadSuccess(viewer, item) {}
 
 function onItemLoadFail(errorCode) {}
 
-function getAccessToken() {
+function getForgeToken() {
   var token = '';
   jQuery.ajax({
     url: '/api/forge/oauth/token',
     success: function (res) {
       token = res;
     },
-    async: false // this request must be synchronous for the Forge Viewer
+    async: false
   });
-  if (token != '') console.log('2 legged token: ' + token); // debug
   return token;
 }
