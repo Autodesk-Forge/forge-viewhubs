@@ -116,6 +116,9 @@
     <Content Include="Images\github-logo.png" />
     <Content Include="Images\icon-model-derive.svg" />
     <Content Include="Images\refresh.png" />
+    <Content Include="Images\Step1.png" />
+    <Content Include="Images\Step2.png" />
+    <Content Include="Images\Step3.png" />
     <Content Include="Images\upload.png" />
     <Content Include="packages.config" />
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />
