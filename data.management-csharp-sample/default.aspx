@@ -28,6 +28,8 @@
   <script src="Scripts/Libraries/FileSaver.min.js"></script>
   <script src="Scripts/Libraries/xlsx.core.min.js"></script>
   <script src="Scripts/ExcelExtension.js"></script>
+
+  <script src="Scripts/CivilExtension.js"></script>
 </head>
 <body>
   <form id="form1" runat="server"></form>

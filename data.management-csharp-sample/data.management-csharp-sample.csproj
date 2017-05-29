@@ -112,6 +112,7 @@
     <Content Include="Images\autodesk-forge.png" />
     <Content Include="Images\autodesk-logo.png" />
     <Content Include="Images\bim360.png" />
+    <Content Include="Images\design_check.png" />
     <Content Include="Images\excel-xls-icon.png" />
     <Content Include="Images\github-logo.png" />
     <Content Include="Images\icon-model-derive.svg" />
@@ -125,6 +126,7 @@
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
     <Content Include="fonts\glyphicons-halflings-regular.ttf" />
     <Content Include="fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Scripts\CivilExtension.js" />
     <Content Include="Scripts\ExcelExtension.js" />
     <Content Include="Scripts\ForgeViewer.js" />
     <Content Include="Scripts\Libraries\Blob.js" />
@@ -158,6 +160,7 @@
     <Compile Include="Controllers\FoldersController.cs" />
     <Compile Include="Controllers\DataManagementTreeController.cs" />
     <Compile Include="Controllers\Utils.cs" />
+    <Compile Include="Controllers\ViewerProxyController.cs" />
     <Compile Include="default.aspx.cs">
       <DependentUpon>default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
