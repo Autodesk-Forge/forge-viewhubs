@@ -160,7 +160,6 @@
     <Compile Include="Controllers\FoldersController.cs" />
     <Compile Include="Controllers\DataManagementTreeController.cs" />
     <Compile Include="Controllers\Utils.cs" />
-    <Compile Include="Controllers\ViewerProxyController.cs" />
     <Compile Include="default.aspx.cs">
       <DependentUpon>default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>

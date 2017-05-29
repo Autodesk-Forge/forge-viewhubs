@@ -22,6 +22,8 @@ The tree view will display personal enterprise (shared) hubs, with respective pr
 
 It allow upload of files to **Projects** and **Folders**. For new files, a version 1.0 is automatically created, following [this tutorial](https://developer.autodesk.com/en/docs/data/v2/tutorials/upload-file/), until step 5.
 
+For Revit files, the **Export to XLS** feature should appear as a toolbar icon: it creates a spreadsheet with all properties for all categories of elements on the model. For Civil 3D drawings with Alignments, the **Alignment Design Check** toolbar icon list aligments and compare its curves with a minimum radius value. 
+
 ## Run Locally
 
 #### Setup
