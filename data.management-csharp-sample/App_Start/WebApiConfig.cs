@@ -16,15 +16,16 @@
 // UNINTERRUPTED OR ERROR FREE.
 /////////////////////////////////////////////////////////////////////
 
+using System.Net.Http;
 using System.Web.Http;
 
 namespace DataManagementSample.Config
 {
-  public class WebApiConfig
+public class WebApiConfig
+{
+  public static void Register(HttpConfiguration config)
   {
-    public static void Register(HttpConfiguration config)
-    {
-      config.MapHttpAttributeRoutes();
-    }
+    config.MapHttpAttributeRoutes();
   }
+}
 }

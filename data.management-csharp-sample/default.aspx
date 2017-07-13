@@ -93,7 +93,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Cancel"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title">Thanks for using ths Forge Tools Sample App!</h4>
+          <h4 class="modal-title">Thanks for using Forge Tools Sample App!</h4>
         </div>
         <div class="modal-body">
           <p>To view your BIM 360 Docs files on this app please authorize my Forge Client ID with your BIM 360 Docs Account.</p>
@@ -120,27 +120,31 @@
   </div>
   <!-- Modal Provision BIM360 Help  -->
   <div class="modal fade" id="provisionAccountStepsModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Cancel"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="myModalLabel1">Steps to enable Apps &amp; Integration</h4>
+          <h4 class="modal-title" id="myModalLabel1">Step-by-step guide</h4>
         </div>
         <div class="modal-body">
+          <p>To access your BIM 360 Docs files with this app, you need to connect your BIM 360 account with the app.</p>
           <ol>
-            <li><a href="https://bim360enterprise.autodesk.com/" target="_blank">Go to your admin page</a> and select the appropriate project</li>
-            <li>Select the gear icon, then "Apps &amp; Integration" tab:
-            <img src="Images/Step1.png" width="500" /></li>
-            <li>On the left, click on "<b>Add Integration</b>" button"<br />
-              <img src="Images/Step2.png" />
+            <li>Log in to <a href="https://bim360enterprise.autodesk.com/" target="_blank">BIM 360 Account Administration</a>. Note that you need account administrator permissions.</li>
+            <li>If you have more than one account, select the account you want to integrate with the app.</li>
+            <li>From the toolbar, select <strong>SETTING &gt; Apps & Integrations</strong>.<br />
+              <img src="/Images/Step1.png" width="500" /></li>
+            <li>Click the <strong>Add Integration</strong> button.<br />
+              <img src="/Images/Step2.png" />
             </li>
-            <li>On <b>"Select Access"</b> page, leave the default options. Click "Next".
+            <li>Select <strong>BIM 360 Account Administration</strong> and <strong>BIM 360 Docs</strong>, and click <strong>Next</strong>.</li>
+            <li>Select <strong>I’m the developer</strong>, and click <strong>Next</strong>.</li>
+            <li>In the <strong>Forge Client ID</strong> and <strong>App Name</strong> fields, enter the Forge client ID and app name provided by the app retailer.</li>
+            <li>Select the <strong>I have saved the Account ID information securely</strong> checkbox.</li>
+            <li>Click <strong>Save</strong>.<br/>
+            <img src="/Images/Step3.png" width="500" />
             </li>
-            <li>Then select <b>"I'm a developer"</b> and "Next".
-            </li>
-            <li>Now enter the <b>Forge Client ID"</b> and <b>"App Name"</b> on the respective fields. Copy the <b>"Account ID"</b>
-              <img src="Images/Step3.png" width="500" />
-            </li>
+            <p></p>
+            <p>Congratulations! You can now access your BIM 360 Docs files.</p>
           </ol>
         </div>
         <div class="modal-footer">
