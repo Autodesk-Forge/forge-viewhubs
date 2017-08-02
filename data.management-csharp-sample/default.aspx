@@ -8,9 +8,9 @@
   <link runat="server" rel="shortcut icon" href="~/favicon.ico" type="image/x-icon" />
   <link runat="server" rel="icon" href="~/favicon.ico" type="image/ico" />
 
-  <link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/style.min.css?v=v2.14" type="text/css" />
+  <link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/style.min.css?v=v2.16" type="text/css" />
   <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/three.min.js"></script>
-  <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/viewer3D.min.js?v=v2.14"></script>
+  <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/viewer3D.min.js?v=v2.16"></script>
 
   <link href="Content/bootstrap.min.css" rel="stylesheet" />
   <link href="Content/jsTree/themes/default/style.min.css" rel="stylesheet" />
