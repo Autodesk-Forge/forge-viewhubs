@@ -18,7 +18,8 @@ This sample show a basic tree view with Hubs, Projects, Folders and Items. It do
 
 The tree view will display personal enterprise (shared) hubs, with respective projects. All BIM 360 projects under the specified account are listed, but an authenticated user can only expand/interact if he/she is added to the project. The following image demonstrate a tipical tree view:
 
-![](DM_BIM360.png) 
+### Thumbnail
+![thumbnail](DM_BIM360.png) 
 
 It allow upload of files to **Projects** and **Folders**. For new files, a version 1.0 is automatically created, following [this tutorial](https://developer.autodesk.com/en/docs/data/v2/tutorials/upload-file/), until step 5.
 
@@ -32,7 +33,9 @@ Open the **web.config** file and adjust the Forge Client ID & Secret. If you pla
 
 ```xml
 <appSettings>
-  <add key="FORGE_CLIENT_ID" value="" />  <add key="FORGE_CLIENT_SECRET" value="" />  <add key="FORGE_CALLBACK_URL" value="http://localhost:3000/api/forge/callback/oauth" />
+  <add key="FORGE_CLIENT_ID" value="" />
+  <add key="FORGE_CLIENT_SECRET" value="" />
+  <add key="FORGE_CALLBACK_URL" value="http://localhost:3000/api/forge/callback/oauth" />
 </appSettings>
 ```
 
