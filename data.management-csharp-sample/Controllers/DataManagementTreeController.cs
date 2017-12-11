@@ -113,7 +113,7 @@ namespace DataManagementSample.Controllers
             nodeType = "bim360hubs";
             break;
         }
-        TreeNode hubNode = new TreeNode(hubInfo.Value.links.self.href, (nodeType == "bim360hubs" ? "BIM 360 Projects" : hubInfo.Value.attributes.name), nodeType, true);
+        TreeNode hubNode = new TreeNode(hubInfo.Value.links.self.href, hubInfo.Value.attributes.name, nodeType, true);
         nodes.Add(hubNode);
       }
 
@@ -135,7 +135,7 @@ namespace DataManagementSample.Controllers
         nodes.Add(projectNode);
       }
 
-      if (hubId.IndexOf("b.")>-1)
+      if (hubId.IndexOf("b.") > -1)
       {
         // the HubId on DM shouble be the same as the account ID, prefixed by b.
 

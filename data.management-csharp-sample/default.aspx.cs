@@ -50,7 +50,7 @@ namespace DataManagementSample
           ConfigVariables.FORGE_CLIENT_ID,
           oAuthConstants.CODE,
           ConfigVariables.FORGE_CALLBACK_URL,
-          new Scope[] { Scope.DataRead, Scope.DataCreate, Scope.AccountWrite, Scope.BucketDelete });
+          new Scope[] { Scope.DataRead, Scope.DataCreate, Scope.DataWrite, Scope.AccountWrite, Scope.BucketDelete });
         Response.Redirect(oauthUrl);
       }
 
