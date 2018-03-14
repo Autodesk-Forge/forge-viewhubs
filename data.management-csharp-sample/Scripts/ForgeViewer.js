@@ -59,7 +59,9 @@ function onDocumentLoadSuccess(doc) {
 
 function onDocumentLoadFailure(viewerErrorCode) { }
 
-function onItemLoadSuccess(viewer, item) { }
+function onItemLoadSuccess(viewer, item) {
+  viewer.loadExtension('ObjectCodeExtension', { objectCodeProperty: 'BIMDATA - ObjectCode' });
+}
 
 function onItemLoadFail(errorCode) { }
 

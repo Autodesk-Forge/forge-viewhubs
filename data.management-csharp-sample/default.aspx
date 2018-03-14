@@ -23,11 +23,13 @@
   <script src="Scripts/ForgeViewer.js"></script>
   <script src="Scripts/Libraries/clipboard.min.js"></script>
   <link href="Content/Main.css" rel="stylesheet" />
+  <link href="https://rawgit.com/augustogoncalves/custom.properties-csharp-lambda.dynamodb/master/viewer.extension/Styles.css" rel="stylesheet" />
 
   <script src="Scripts/Libraries/Blob.js"></script>
   <script src="Scripts/Libraries/FileSaver.min.js"></script>
   <script src="Scripts/Libraries/xlsx.core.min.js"></script>
   <script src="Scripts/ExcelExtension.js"></script>
+  <script src="https://rawgit.com/augustogoncalves/custom.properties-csharp-lambda.dynamodb/master/viewer.extension/ObjectCodeExtension.js"></script>
 
   <script src="Scripts/CivilExtension.js"></script>
 </head>
