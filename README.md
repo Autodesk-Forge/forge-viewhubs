@@ -19,7 +19,7 @@ This sample show a basic tree view with Hubs, Projects, Folders and Items. It do
 The tree view will display personal enterprise (shared) hubs, with respective projects. All BIM 360 projects under the specified account are listed, but an authenticated user can only expand/interact if he/she is added to the project. The following image demonstrate a tipical tree view:
 
 ### Thumbnail
-![thumbnail](DM_BIM360.png) 
+![thumbnail](/thumbnail.png) 
 
 It allow upload of files to **Projects** and **Folders**. For new files, a version 1.0 is automatically created, following [this tutorial](https://developer.autodesk.com/en/docs/data/v2/tutorials/upload-file/), until step 5.
 
