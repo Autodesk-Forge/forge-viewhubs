@@ -23,7 +23,7 @@ The tree view will display personal enterprise (shared) hubs, with respective pr
 
 ## Live version
 
-[forgedatamanagement.herokuapp.com/](https://forgedatamanagement.herokuapp.com/)
+[forgedatamanagement.herokuapp.com/](https://forgedatamanagement.herokuapp.com)
 
 # Setup
 
@@ -34,6 +34,8 @@ The tree view will display personal enterprise (shared) hubs, with respective pr
 3. **Visual Studio**: Either Community (Windows) or Code (Windows, MacOS).
 4. **.NET Core** basic knowledge with C#
 5. **JavaScript** basic knowledge with **jQuery**
+
+## Running locally
 
 Clone this project or download it. It's recommended to install [GitHub desktop](https://desktop.github.com/). To clone it via command line, use the following (**Terminal** on MacOSX/Linux, **Git Shell** on Windows):
 
