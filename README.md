@@ -1,64 +1,105 @@
 # data.management-csharp-sample
 
-Basic 3-legged OAuth and Data Management API access to A360 and BIM 360 Docs projects, files and versions. 
-
-![Platforms](https://img.shields.io/badge/platform-Windows-lightgray.svg)
-![.NET](https://img.shields.io/badge/.NET-4.5.2-blue.svg)
-[![ASP.NET](https://img.shields.io/badge/ASP.NET-4.5.2-blue.svg)](https://asp.net/)
-[![License](http://img.shields.io/:license-mit-blue.svg)](http://opensource.org/licenses/MIT)
+![Platforms](https://img.shields.io/badge/platform-Windows|MacOS-lightgray.svg)
+![.NET](https://img.shields.io/badge/.NET%20Core-2.1-blue.svg)
+[![License](http://img.shields.io/:license-MIT-blue.svg)](http://opensource.org/licenses/MIT)
 
 [![oAuth2](https://img.shields.io/badge/oAuth2-v1-green.svg)](http://developer.autodesk.com/)
 [![Data-Management](https://img.shields.io/badge/Data%20Management-v1-green.svg)](http://developer.autodesk.com/)
-[![OSS](https://img.shields.io/badge/OSS-v2-green.svg)](http://developer.autodesk.com/)
-[![Model-Derivative](https://img.shields.io/badge/Model%20Derivative-v2-green.svg)](http://developer.autodesk.com/)
+[![Viewer](https://img.shields.io/badge/Viewer-v6-green.svg)](http://developer.autodesk.com/)
+[![BIM-360](https://img.shields.io/badge/BIM%20360-v1-green.svg)](http://developer.autodesk.com/)
+
+![Intermediate](https://img.shields.io/badge/Level-Intermediate-blue.svg)
 
 # Description
 
-This sample show a basic tree view with Hubs, Projects, Folders and Items. It does not use the ASP.NET native [TreeView](https://msdn.microsoft.com/en-us/library/system.web.ui.webcontrols.treeview.aspx) due its limitations, but the [jsTree](https://www.jstree.com/) library, that have support for menus, reload, among other features.
+This sample show a basic tree view with Hubs, Projects, Folders and Items. It does not use the ASP.NET native [TreeView](https://msdn.microsoft.com/en-us/library/system.web.ui.webcontrols.treeview.aspx) due its limitations, but the [jsTree](https://www.jstree.com/) library, that have support for menus, reload, among other features. This sample is based on the [Learn Forge](http://learnforge.autodesk.io) tutorial.
 
-The tree view will display personal enterprise (shared) hubs, with respective projects. All BIM 360 projects under the specified account are listed, but an authenticated user can only expand/interact if he/she is added to the project. The following image demonstrate a tipical tree view:
+The tree view will display personal enterprise (shared) hubs, with respective projects. For Civil 3D drawings with Alignments, the **Alignment Design Check** toolbar icon list aligments and compare its curves with a minimum radius value. The following image demonstrate a tipical tree view:
 
-### Thumbnail
-![thumbnail](/thumbnail.png) 
+## Thumbnail
 
-It allow upload of files to **Projects** and **Folders**. For new files, a version 1.0 is automatically created, following [this tutorial](https://developer.autodesk.com/en/docs/data/v2/tutorials/upload-file/), until step 5.
+![thumbnail](/thumbnail.gif) 
 
-For Revit files, the **Export to XLS** feature should appear as a toolbar icon: it creates a spreadsheet with all properties for all categories of elements on the model. For Civil 3D drawings with Alignments, the **Alignment Design Check** toolbar icon list aligments and compare its curves with a minimum radius value. 
+## Live version
 
-## Run Locally
+[forgedatamanagement.herokuapp.com/](https://forgedatamanagement.herokuapp.com)
 
-#### Setup
+# Setup
 
-Open the **web.config** file and adjust the Forge Client ID & Secret. If you plan to deploy to Appharbor, configure the variables on the host settings (no need to change this web.config file).
+## Prerequisites
 
-```xml
-<appSettings>
-  <add key="FORGE_CLIENT_ID" value="" />
-  <add key="FORGE_CLIENT_SECRET" value="" />
-  <add key="FORGE_CALLBACK_URL" value="http://localhost:3000/api/forge/callback/oauth" />
-</appSettings>
+1. **BIM 360 Account**: (optional) must be Account Admin to add the app integration. [Learn about provisioning](https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps).
+2. **Forge Account**: Learn how to create a Forge Account, activate subscription and create an app at [this tutorial](http://learnforge.autodesk.io/#/account/). 
+3. **Visual Studio**: Either Community (Windows) or Code (Windows, MacOS).
+4. **.NET Core** basic knowledge with C#
+5. **JavaScript** basic knowledge with **jQuery**
+
+## Running locally
+
+Clone this project or download it. It's recommended to install [GitHub desktop](https://desktop.github.com/). To clone it via command line, use the following (**Terminal** on MacOSX/Linux, **Git Shell** on Windows):
+
+    git clone https://github.com/autodesk-forge/data.management-csharp-sample
+
+**Visual Studio** (Windows):
+
+Right-click on the project, then go to **Debug**. Adjust the settings as shown below. 
+
+![](forgeSample/wwwroot/img/readme/visual_studio_settings.png)
+
+**Visual Sutdio Code** (Windows, MacOS):
+
+Open the folder, at the bottom-right, select **Yes** and **Restore**. This restores the packages (e.g. Autodesk.Forge) and creates the launch.json file. See *Tips & Tricks* for .NET Core on MacOS.
+
+![](forgeSample/wwwroot/img/readme/visual_code_restore.png)
+
+At the `.vscode\launch.json`, find the env vars and add your Forge Client ID, Secret and callback URL. Also define the `ASPNETCORE_URLS` variable. The end result should be as shown below:
+
+```json
+"env": {
+    "ASPNETCORE_ENVIRONMENT": "Development",
+    "ASPNETCORE_URLS" : "http://localhost:3000",
+    "FORGE_CLIENT_ID": "your id here",
+    "FORGE_CLIENT_SECRET": "your secret here",
+    "FORGE_CALLBACK_URL": "http://localhost:3000/api/forge/callback/oauth",
+},
 ```
 
-No need to adjust the **FORGE\_CALLBACK\_URL** appSettings to run it locally.
+## Deployment
 
-Compile the solution, Visual Studio should download the NUGET packages ([Autodesk Forge](https://www.nuget.org/packages/Autodesk.Forge/), [RestSharp](https://www.nuget.org/packages/RestSharp) and [Newtonsoft.Json](https://www.nuget.org/packages/newtonsoft.json/)). 
+To deploy this application to Heroku, the **Callback URL** for Forge must use your `.herokuapp.com` address. After clicking on the button below, at the Heroku Create New App page, set your Client ID, Secret and Callback URL for Forge.
 
-#### Usage
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-To use, right-click on a Project or Folder to **Upload** files. The tree view should reload once the file is uploaded. If available, right-click on "BIM 360 Projects" to create new BIM 360 Projects.
+Watch [this video](https://www.youtube.com/watch?v=Oqa9O20Gj0c) on how deploy samples to Heroku.
 
-# Deployment
+# Further Reading
 
-This sample still a work in progress, not ready for production. For Appharbor deployment, following [this steps to configure your Forge Client ID & Secret](http://adndevblog.typepad.com/cloud_and_mobile/2017/01/deploying-forge-aspnet-samples-to-appharbor.html).
+Documentation:
 
-# Limitations
+- [BIM 360 API](https://developer.autodesk.com/en/docs/bim360/v1/overview/) and [App Provisioning](https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps)
+- [Data Management API](https://developer.autodesk.com/en/docs/data/v2/overview/)
+- [Viewer](https://developer.autodesk.com/en/docs/viewer/v6)
 
-This sample is not yet handling refresh tokens. Additionally, the access tokens are saved on Cookies and used on each request (WebAPI). On a production environment, the access token & refresh token should be safelly stored and not exposed to endusers. In this scenario, assuming a HTTPS connection, this is a not a security breach, as it only gives access to the current user information.
+Tutorials:
 
-# License
+- [Learn Forge](http://learnforge.autodesk.io)
+- [View BIM 360 Models](http://learnforge.autodesk.io/#/tutorials/viewhubmodels)
 
-This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-Please see the [LICENSE](LICENSE) file for full details.
+
+### Tips & Tricks
+
+This sample uses .NET Core and works fine on both Windows and MacOS, see [this tutorial for MacOS](https://github.com/augustogoncalves/dotnetcoreheroku).
+
+### Troubleshooting
+
+1. **Cannot see my BIM 360 projects**: Make sure to provision the Forge App Client ID within the BIM 360 Account, [learn more here](https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps). This requires the Account Admin permission.
+
+2. **error setting certificate verify locations** error: may happen on Windows, use the following: `git config --global http.sslverify "false"`
+
+## License
+
+This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT). Please see the [LICENSE](LICENSE) file for full details.
 
 ## Written by
 
