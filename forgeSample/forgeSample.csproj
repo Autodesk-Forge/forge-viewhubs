@@ -6,7 +6,7 @@
         <Folder Include="wwwroot\" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Autodesk.Forge" Version="1.5.0-alfa2" />
+        <PackageReference Include="Autodesk.Forge" Version="1.5.2" />
         <PackageReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 </Project>
