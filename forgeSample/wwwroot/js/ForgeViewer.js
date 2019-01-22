@@ -37,7 +37,7 @@ function launchViewer(urn, viewableId) {
   var documentId = 'urn:' + urn;
   Autodesk.Viewing.Initializer(options, function onInitialized() {
     viewerApp = new Autodesk.Viewing.ViewingApplication('forgeViewer');
-    viewerApp.registerViewer(viewerApp.k3D, Autodesk.Viewing.Private.GuiViewer3D);
+    viewerApp.registerViewer(viewerApp.k3D, Autodesk.Viewing.Private.GuiViewer3D, { extensions: ['Autodesk.Sample.CivilExtension'] });
     viewerApp.loadDocument(documentId, function (doc) {
       // We could still make use of Document.getSubItemsWithProperties()
       // However, when using a ViewingApplication, we have access to the **bubble** attribute,
@@ -66,7 +66,6 @@ function onDocumentLoadFailure(viewerErrorCode) {
 
 function onItemLoadSuccess(viewer, item) {
   // item loaded, any custom action?
-  viewer.loadExtension('Autodesk.Sample.CivilExtension');
   viewer.loadExtension('ObjectCodeExtension', { objectCodeProperty: 'BIMDATA - ObjectCode' });
 }
 
