@@ -18,6 +18,22 @@
 
 var viewerApp;
 
+$(document).ready(function () {
+  var urn = getParameterByName('urn');
+  if (urn !== null && urn !== '')
+    launchViewer(urn);
+});
+
+function getParameterByName(name, url) {
+  if (!url) url = window.location.href;
+  name = name.replace(/[\[\]]/g, '\\$&');
+  var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+    results = regex.exec(url);
+  if (!results) return null;
+  if (!results[2]) return '';
+  return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
 function launchViewer(urn, viewableId) {
   if (viewerApp != null) {
     var thisviewer = viewerApp.getCurrentViewer();
@@ -37,7 +53,7 @@ function launchViewer(urn, viewableId) {
   var documentId = 'urn:' + urn;
   Autodesk.Viewing.Initializer(options, function onInitialized() {
     viewerApp = new Autodesk.Viewing.ViewingApplication('forgeViewer');
-    viewerApp.registerViewer(viewerApp.k3D, Autodesk.Viewing.Private.GuiViewer3D, { extensions: ['Autodesk.Sample.CivilExtension'] });
+    viewerApp.registerViewer(viewerApp.k3D, Autodesk.Viewing.Private.GuiViewer3D, { extensions: ['Autodesk.Sample.CivilExtension', 'Autodesk.Sample.MiniMapExtension'] });
     viewerApp.loadDocument(documentId, function (doc) {
       // We could still make use of Document.getSubItemsWithProperties()
       // However, when using a ViewingApplication, we have access to the **bubble** attribute,
