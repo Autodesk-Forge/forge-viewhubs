@@ -40,15 +40,13 @@ MiniMapExtension.prototype.load = function () {
         this.createUI();
     } else {
         // Toolbar hasn't been created yet, wait until we get notification of its creation
-        this.onToolbarCreatedBinded = this.onToolbarCreated.bind(this);
-        this.viewer.addEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, this.onToolbarCreatedBinded);
+        this.viewer.addEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, () => { this.onToolbarCreated });
     }
     return true;
 };
 
 MiniMapExtension.prototype.onToolbarCreated = function () {
-    this.viewer.removeEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, this.onToolbarCreatedBinded);
-    this.onToolbarCreatedBinded = null;
+    this.viewer.removeEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, this.onToolbarCreated);
     this.createUI();
 };
 
@@ -151,7 +149,7 @@ MiniMapExtension.prototype.cameraChanged = function (camera) {
 
 
 MiniMapExtension.prototype.unload = function () {
-    this.viewer.toolbar.removeControl(this.subToolbar);
+    if (this.viewer.toolbar !== null) this.viewer.toolbar.removeControl(this.subToolbar);
     if (this.panel !== null) this.panel.setVisible(false);
     return true;
 };
