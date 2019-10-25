@@ -44,7 +44,7 @@ function launchViewer(urn, viewableId) {
   };
 
   Autodesk.Viewing.Initializer(options, () => {
-    viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'), { extensions: ['Autodesk.Sample.MiniMapExtension', 'Autodesk.Sample.CustomPropertyPanelExtension', 'Autodesk.Sample.CivilExtension'] });
+    viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'), { extensions: ['Autodesk.Sample.MiniMapExtension', 'Autodesk.DocumentBrowser', 'Autodesk.Sample.CustomPropertyPanelExtension', 'Autodesk.Sample.CivilExtension'] });
     viewer.start();
     var documentId = 'urn:' + urn;
     Autodesk.Viewing.Document.load(documentId, onDocumentLoadSuccess, onDocumentLoadFailure);

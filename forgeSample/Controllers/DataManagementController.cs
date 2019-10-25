@@ -32,8 +32,8 @@ namespace forgeSample.Controllers
 {
     public class DataManagementController : ControllerBase
     {
-        private IHostingEnvironment _env;
-        public DataManagementController(IHostingEnvironment env)
+        private IWebHostEnvironment _env;
+        public DataManagementController(IWebHostEnvironment env)
         {
             _env = env;
         }
