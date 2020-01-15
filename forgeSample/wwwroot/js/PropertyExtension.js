@@ -17,9 +17,9 @@ CustomPropertyPanel.prototype.setProperties = function (properties, options) {
     // for example, let's show the dbId and externalId
     var _this = this;
     // dbId is right here as nodeId
-    this.addProperty('dbId', this.nodeId, 'Custom Properties');
+    this.addProperty('dbId', this.propertyNodeId, 'Custom Properties');
     // externalId is under all properties, let's get it!
-    this.viewer.getProperties(this.nodeId, function (props) {
+    this.viewer.getProperties(this.propertyNodeId, function (props) {
         _this.addProperty('externalId', props.externalId, 'Custom Properties');
     })
 }
@@ -49,13 +49,19 @@ CustomPropertyPanelExtension.prototype.load = function () {
 
 CustomPropertyPanelExtension.prototype.onToolbarCreated = function () {
     this.panel = new CustomPropertyPanel(this.viewer, this.options);
-    this.viewer.setPropertyPanel(this.panel);
+    var _this = this;
+    this.viewer.addEventListener(Autodesk.Viewing.EXTENSION_LOADED_EVENT, function (e) {
+        if (e.extensionId !== 'Autodesk.PropertiesManager') return;
+        var ext = _this.viewer.getExtension('Autodesk.PropertiesManager');
+        ext.setPanel(_this.panel);
+    })
 };
 
 CustomPropertyPanelExtension.prototype.unload = function () {
     if (this.panel == null) return;
-    this.viewer.setPropertyPanel(null);
+    var ext = this.viewer.getExtension('Autodesk.PropertiesManager');
     this.panel = null;
+    ext.setDefaultPanel();
     return true;
 };
 
