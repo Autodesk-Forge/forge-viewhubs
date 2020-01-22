@@ -32,6 +32,9 @@ function getParameterByName(name, url) {
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
 
+// dark-mode
+const media = window.matchMedia('(prefers-color-scheme: dark)');
+
 // From learnforge.autodesk.io (View BIM 360 Models)
 
 var viewer;
@@ -55,6 +58,11 @@ function launchViewer(urn, viewableId) {
     viewer.loadDocumentNode(doc, viewables).then(i => {
       // any additional action here?
     });
+
+    media.addListener(() => {
+      viewer.setTheme((media.matches ? 'dark' : 'light') + '-theme')
+    });
+    viewer.setTheme((media.matches ? 'dark' : 'light') + '-theme')
   }
 
   function onDocumentLoadFailure(viewerErrorCode) {
