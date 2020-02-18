@@ -39,27 +39,37 @@ MiniMapExtension.prototype.load = function () {
 };
 
 MiniMapExtension.prototype.onToolbarCreated = function () {
-    var _this = this;
+    // Create a new toolbar group if it doesn't exist
+    this._group = this.viewer.toolbar.getControl('customExtensions');
+    if (!this._group) {
+        this._group = new Autodesk.Viewing.UI.ControlGroup('customExtensions');
+        this.viewer.toolbar.addControl(this._group);
+    }
 
-    // button to show the docking panel
-    var toolbarButtonShowDockingPanel = new Autodesk.Viewing.UI.Button('showMiniMap');
-    toolbarButtonShowDockingPanel.onClick = function (e) {
-        if (_this.geoExtension === null || !_this.geoExtension.hasGeolocationData()) {
+    // Add a new button to the toolbar group
+    this._button = new Autodesk.Viewing.UI.Button('showMiniMap');
+    this._button.onClick = (ev) => {
+        if (this.geoExtension === null || !this.geoExtension.hasGeolocationData()) {
             alert('Model does not contain geo location information');
             return;
         }
 
+        this._enabled = !this._enabled;
+        this._button.setState(this._enabled ? 0 : 1);
+
         // if null, create it
-        if (_this.panel == null) {
-            _this.panel = new MiniMapPanel(_this.viewer, _this.viewer.container, 'miniMapPanel', 'Mini Map');
+        if (this.panel == null) {
+            this.panel = new MiniMapPanel(this.viewer, this.viewer.container, 'miniMapPanel', 'Mini Map');
         }
 
         // show/hide docking panel
-        _this.panel.setVisible(!_this.panel.isVisible());
+        this.panel.setVisible(!this.panel.isVisible());
+
+        if (!this._enabled) return;
 
         // initialize the map
-        if (_this.map == null) {
-            _this.map = new google.maps.Map(document.getElementById('googlemap'), {
+        if (this.map == null) {
+            this.map = new google.maps.Map(document.getElementById('googlemap'), {
                 zoom: 16,
                 center: { lat: 0, lng: 0 },
                 mapTypeId: 'satellite',
@@ -67,23 +77,20 @@ MiniMapExtension.prototype.onToolbarCreated = function () {
                 streetViewControl: false,
                 tilt: 0
             });
-            // draw model boundoung box & center
-            var bb = _this.viewer.model.getBoundingBox();
-            _this.drawBoundingBox(bb.min, bb.max);
-            _this.cameraChanged(_this.viewer.autocam); // first run (center of the model)
         }
-    };
-    // CSS for the toolbar
-    toolbarButtonShowDockingPanel.addClass('miniMapExtension');
-    toolbarButtonShowDockingPanel.setToolTip('Show minimap');
 
-    // SubToolbar
-    this.subToolbar = new Autodesk.Viewing.UI.ControlGroup('CustomGeoTools');
-    this.subToolbar.addControl(toolbarButtonShowDockingPanel);
-    this.viewer.toolbar.addControl(this.subToolbar);
+        // draw model boundoung box & center
+        var bb = this.viewer.model.getBoundingBox();
+        this.drawBoundingBox(bb.min, bb.max);
+        this.cameraChanged(this.viewer.autocam); // first run (center of the model)
+
+    };
+    this._button.setToolTip('Show map location');
+    this._button.container.children[0].classList.add('fas', 'fa-map-marked');
+    this._group.addControl(this._button);
 
     // listen to camera changes
-    this.viewer.addEventListener(Autodesk.Viewing.CAMERA_CHANGE_EVENT, function (e) { _this.cameraChanged(e.target.autocam) });
+    this.viewer.addEventListener(Autodesk.Viewing.CAMERA_CHANGE_EVENT, (e) => { this.cameraChanged(e.target.autocam) });
 };
 
 MiniMapExtension.prototype.drawBoundingBox = function (min, max) {

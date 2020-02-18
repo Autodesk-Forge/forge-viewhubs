@@ -32,14 +32,6 @@ body {
 .alignItem{
   cursor: pointer;
   background: none;   
-  color: #FFFFFF;
-}
-
-.miniMapExtension {
-  background-image: url(https://github.com/encharm/Font-Awesome-SVG-PNG/raw/master/white/png/24/map-o.png);
-  background-size: 24px;
-  background-repeat: no-repeat;
-  background-position: center;
 }
 
 #googlemap {
