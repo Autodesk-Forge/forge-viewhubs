@@ -59,7 +59,7 @@ function launchViewer(urn, viewableId) {
       // any additional action here?
     });
 
-    media.addListener(() => {
+    media.addEventListener(() => {
       viewer.setTheme((media.matches ? 'dark' : 'light') + '-theme')
     });
     viewer.setTheme((media.matches ? 'dark' : 'light') + '-theme')
