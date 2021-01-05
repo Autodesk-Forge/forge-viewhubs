@@ -19,26 +19,27 @@
 // *******************************************
 // MiniMap Extension
 // *******************************************
-function MiniMapExtension(viewer, options) {
+function GoogleMapsLocator(viewer, options) {
     Autodesk.Viewing.Extension.call(this, viewer, options);
     this.viewer = viewer;
     this.panel = null; // dock panel
     this.map = null; // Google Map
     this.geoExtension = null; // Autodesk.Geolocation extension
+    this.options = options;
 
     var _this = this;
     // load extension...
     viewer.loadExtension('Autodesk.Geolocation').then(function (ext) { _this.geoExtension = ext });
 }
 
-MiniMapExtension.prototype = Object.create(Autodesk.Viewing.Extension.prototype);
-MiniMapExtension.prototype.constructor = MiniMapExtension;
+GoogleMapsLocator.prototype = Object.create(Autodesk.Viewing.Extension.prototype);
+GoogleMapsLocator.prototype.constructor = GoogleMapsLocator;
 
-MiniMapExtension.prototype.load = function () {
+GoogleMapsLocator.prototype.load = function () {
     return true;
 };
 
-MiniMapExtension.prototype.onToolbarCreated = function () {
+GoogleMapsLocator.prototype.onToolbarCreated = function () {
     // Create a new toolbar group if it doesn't exist
     this._group = this.viewer.toolbar.getControl('customExtensions');
     if (!this._group) {
@@ -71,7 +72,7 @@ MiniMapExtension.prototype.onToolbarCreated = function () {
         if (this.map == null) {
             this.map = new google.maps.Map(document.getElementById('googlemap'), {
                 zoom: 16,
-                center: { lat: 0, lng: 0 },
+                center: { lat: this.options.lattitude, lng: this.options.longitude },
                 mapTypeId: 'satellite',
                 rotateControl: false,
                 streetViewControl: false,
@@ -93,7 +94,7 @@ MiniMapExtension.prototype.onToolbarCreated = function () {
     this.viewer.addEventListener(Autodesk.Viewing.CAMERA_CHANGE_EVENT, (e) => { this.cameraChanged(e.target.autocam) });
 };
 
-MiniMapExtension.prototype.drawBoundingBox = function (min, max) {
+GoogleMapsLocator.prototype.drawBoundingBox = function (min, max) {
     // basic check...
     if (this.map == null) return;
     if (this.geoExtension == null) return;
@@ -108,7 +109,7 @@ MiniMapExtension.prototype.drawBoundingBox = function (min, max) {
     this.drawPolygon(polygon);
 }
 
-MiniMapExtension.prototype.drawPolygon = function (polygon) {
+GoogleMapsLocator.prototype.drawPolygon = function (polygon) {
     // basic check...
     var _this = this;
     if (_this.map == null) return;
@@ -132,7 +133,7 @@ MiniMapExtension.prototype.drawPolygon = function (polygon) {
     polygon.setMap(_this.map);
 }
 
-MiniMapExtension.prototype.cameraChanged = function (camera) {
+GoogleMapsLocator.prototype.cameraChanged = function (camera) {
     // basic check...
     if (this.map == null) return;
     if (this.geoExtension == null) return;
@@ -143,13 +144,19 @@ MiniMapExtension.prototype.cameraChanged = function (camera) {
 }
 
 
-MiniMapExtension.prototype.unload = function () {
+GoogleMapsLocator.prototype.unload = function () {
     if (this.viewer.toolbar !== null) this.viewer.toolbar.removeControl(this.subToolbar);
     if (this.panel !== null) this.panel.setVisible(false);
+    if (this._group) {
+        this._group.removeControl(this._button);
+        if (this._group.getNumberOfControls() === 0) {
+            this.viewer.toolbar.removeControl(this._group);
+        }
+    }
     return true;
 };
 
-Autodesk.Viewing.theExtensionManager.registerExtension('Autodesk.Sample.MiniMapExtension', MiniMapExtension);
+Autodesk.Viewing.theExtensionManager.registerExtension('GoogleMapsLocator', GoogleMapsLocator);
 
 // *******************************************
 // MiniMap Panel
@@ -166,13 +173,6 @@ function MiniMapPanel(viewer, container, id, title, options) {
     this.container.style.width = "300px";
     this.container.style.height = "300px";
     this.container.style.resize = "auto";
-
-    // here we check the existence of a googlemap div
-    // and remove it if it does
-    var googleMap = document.getElementById('googlemap');
-    if(!!googleMap){
-        googleMap.parentElement.removeChild(googleMap)
-    }
 
     // this is where we should place the content of our panel
     var div = document.createElement('div');
