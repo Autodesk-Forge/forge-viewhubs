@@ -47,7 +47,7 @@ function launchViewer(urn, viewableId) {
   };
 
   Autodesk.Viewing.Initializer(options, () => {
-    viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'), { extensions: ['Autodesk.Sample.MiniMapExtension', 'Autodesk.DocumentBrowser', 'Autodesk.Sample.CustomPropertyPanelExtension', 'Autodesk.Sample.CivilExtension'] });
+    viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'), { extensions: ['GoogleMapsLocator', 'Autodesk.DocumentBrowser', 'Autodesk.Sample.CustomPropertyPanelExtension', 'Autodesk.Sample.CivilExtension'] });
     viewer.start();
     var documentId = 'urn:' + urn;
     Autodesk.Viewing.Document.load(documentId, onDocumentLoadSuccess, onDocumentLoadFailure);
@@ -59,7 +59,7 @@ function launchViewer(urn, viewableId) {
       // any additional action here?
     });
 
-    media.addListener(() => {
+    media.addEventListener(() => {
       viewer.setTheme((media.matches ? 'dark' : 'light') + '-theme')
     });
     viewer.setTheme((media.matches ? 'dark' : 'light') + '-theme')
