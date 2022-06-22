@@ -1,26 +1,8 @@
-/////////////////////////////////////////////////////////////////////
-// Copyright (c) Autodesk, Inc. All rights reserved
-// Written by Forge Partner Development
-//
-// Permission to use, copy, modify, and distribute this software in
-// object code form for any purpose and without fee is hereby granted,
-// provided that the above copyright notice appears in all copies and
-// that both that copyright notice and the limited warranty and
-// restricted rights notice below appear in all supporting
-// documentation.
-//
-// AUTODESK PROVIDES THIS PROGRAM "AS IS" AND WITH ALL FAULTS.
-// AUTODESK SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTY OF
-// MERCHANTABILITY OR FITNESS FOR A PARTICULAR USE.  AUTODESK, INC.
-// DOES NOT WARRANT THAT THE OPERATION OF THE PROGRAM WILL BE
-// UNINTERRUPTED OR ERROR FREE.
-/////////////////////////////////////////////////////////////////////
-
-
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Autodesk.Forge;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Http;
 using System.Net;
@@ -110,11 +92,11 @@ namespace forgeSample.Controllers
         private const string FORGE_COOKIE = "ForgeApp";
 
         private Credentials() { }
-
         public string TokenInternal { get; set; }
         public string TokenPublic { get; set; }
         public string RefreshToken { get; set; }
         public DateTime ExpiresAt { get; set; }
+        public string UserId { get; set; }
 
         /// <summary>
         /// Perform the OAuth authorization via code
@@ -138,10 +120,22 @@ namespace forgeSample.Controllers
             credentials.TokenPublic = credentialPublic.access_token;
             credentials.RefreshToken = credentialPublic.refresh_token;
             credentials.ExpiresAt = DateTime.Now.AddSeconds(credentialInternal.expires_in);
+            credentials.UserId = await GetUserId(credentials);
 
             cookies.Append(FORGE_COOKIE, JsonConvert.SerializeObject(credentials));
 
+            // add a record on our database for the tokens and refresh token
+            OAuthDB.Register(credentials.UserId, JsonConvert.SerializeObject(credentials));
+
             return credentials;
+        }
+
+        private static async Task<string> GetUserId(Credentials credentials)
+        {
+            UserProfileApi userApi = new UserProfileApi();
+            userApi.Configuration.AccessToken = credentials.TokenInternal;
+            dynamic userProfile = await userApi.GetUserProfileAsync();
+            return userProfile.userId;
         }
 
         /// <summary>
@@ -155,9 +149,28 @@ namespace forgeSample.Controllers
             Credentials credentials = JsonConvert.DeserializeObject<Credentials>(requestCookie[FORGE_COOKIE]);
             if (credentials.ExpiresAt < DateTime.Now)
             {
-                await credentials.RefreshAsync();
+                credentials = await FromDatabaseAsync(credentials.UserId);
                 responseCookie.Delete(FORGE_COOKIE);
                 responseCookie.Append(FORGE_COOKIE, JsonConvert.SerializeObject(credentials));
+            }
+
+            return credentials;
+        }
+
+        public static async Task<Credentials> FromDatabaseAsync(string userId)
+        {
+            var doc = await OAuthDB.GetCredentials(userId);
+
+            Credentials credentials = new Credentials();
+            credentials.TokenInternal = (string)doc["TokenInternal"];
+            credentials.TokenPublic = (string)doc["TokenPublic"];
+            credentials.RefreshToken = (string)doc["RefreshToken"];
+            credentials.ExpiresAt = DateTime.Parse((string)doc["ExpiresAt"]);
+            credentials.UserId = userId;
+
+            if (credentials.ExpiresAt < DateTime.Now)
+            {
+                await credentials.RefreshAsync();
             }
 
             return credentials;
@@ -188,6 +201,9 @@ namespace forgeSample.Controllers
             TokenPublic = credentialPublic.access_token;
             RefreshToken = credentialPublic.refresh_token;
             ExpiresAt = DateTime.Now.AddSeconds(credentialInternal.expires_in);
+
+            // update the record on our database for the tokens and refresh token
+            OAuthDB.Register(await GetUserId(this), JsonConvert.SerializeObject(this));
         }
 
         /// <summary>
