@@ -32,5 +32,9 @@ body {
 .alignItem{
   cursor: pointer;
   background: none;   
-  color: #FFFFFF;
+}
+
+#googlemap {
+  width: 100%;
+  height: calc(100% - 70px);
 }

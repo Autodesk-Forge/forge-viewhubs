@@ -1,7 +1,7 @@
-# data.management-csharp-sample
+# View models on hubs (BIM 360 or Fusion Team)
 
 ![Platforms](https://img.shields.io/badge/platform-Windows|MacOS-lightgray.svg)
-![.NET](https://img.shields.io/badge/.NET%20Core-2.1-blue.svg)
+![.NET](https://img.shields.io/badge/.NET%20Core-3.1-blue.svg)
 [![License](http://img.shields.io/:license-MIT-blue.svg)](http://opensource.org/licenses/MIT)
 
 [![oAuth2](https://img.shields.io/badge/oAuth2-v1-green.svg)](http://developer.autodesk.com/)
