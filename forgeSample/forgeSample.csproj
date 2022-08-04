@@ -10,6 +10,7 @@
         <PackageReference Include="Hangfire.AspNetCore" Version="1.7.28" />
         <PackageReference Include="Hangfire.MemoryStorage" Version="1.7.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.10" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="6.0.7" />
         <PackageReference Include="MongoDB.Bson" Version="2.15.1" />
         <PackageReference Include="MongoDB.Driver" Version="2.15.1" />
     </ItemGroup>

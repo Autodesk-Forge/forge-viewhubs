@@ -31,16 +31,24 @@ using RestSharp;
 using Newtonsoft.Json;
 using Hangfire;
 using System.Diagnostics;
+using System.Linq;
+using Microsoft.AspNetCore.SignalR;
+
 
 namespace forgeSample.Controllers
 {
     public class DataManagementController : ControllerBase
     {
+
+        private IHubContext<DataManagementHub> _hubContext;
+
         private IWebHostEnvironment _env;
         private static RestClient client = new RestClient("https://developer.api.autodesk.com");
-        public DataManagementController(IWebHostEnvironment env)
+        private static Random randomWorkflowId = new Random();
+        public DataManagementController(IWebHostEnvironment env, IHubContext<DataManagementHub> hubContext)
         {
             _env = env;
+            _hubContext = hubContext;
         }
 
         /// <summary>
@@ -429,7 +437,34 @@ namespace forgeSample.Controllers
                 CreateItemRelationshipsStorage createItemRelationshipsStorage = new CreateItemRelationshipsStorage(createItemRelationshipsStorageData);
                 CreateItemRelationships createItemRelationship = new CreateItemRelationships(createItemRelationshipsStorage);
                 CreateItemIncluded includedVersion = new CreateItemIncluded(CreateItemIncluded.TypeEnum.Versions, CreateItemIncluded.IdEnum._1, storageDataAtt, createItemRelationship);
-                CreateItem createItem = new CreateItem(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), createItemData, new List<CreateItemIncluded>() { includedVersion });
+ 
+                IList<GetHookData.Hook> hooks = await Hooks();
+                bool createHook = true;
+                foreach (GetHookData.Hook hook in hooks)
+                {
+                    if (hook.tenant.Equals(input.connectionId))
+                    {
+                        createHook = false;
+                        if (!hook.callbackUrl.Equals(CallbackUrl))
+                        {
+                            RestRequest request = new RestRequest("/webhooks/v1/systems/data/events/{supportedEvent}/hooks/{webhookId}", Method.DELETE);
+                            request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
+                            request.AddUrlSegment("webhookId", hook.hookId);
+                            request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
+                            IRestResponse response = await client.ExecuteAsync(request);
+                            createHook = true;
+                        }
+                    }
+                }
+
+                var workFlowId = RandomString(36);
+                if (createHook) await CreateWebHookAsync(workFlowId, ConvertToString(SupportedEvents.ExtractionFinished), CallbackUrl);
+
+                MetaWorkflowAttributeMyObjectObject metaWorkflowAttributeMyObjectObject = new MetaWorkflowAttributeMyObjectObject(true);
+                MetaWorkflowAttributeObject metaWorkflowAttributeObject = new MetaWorkflowAttributeObject(33, projectId, metaWorkflowAttributeMyObjectObject);
+                MetaObject metaObject = new MetaObject(workFlowId, metaWorkflowAttributeObject);
+                CreateNewObject createItemObject = new CreateNewObject(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), createItemData, new List<CreateItemIncluded>() { includedVersion }, metaObject);
+                CreateItem createItem = JsonConvert.DeserializeObject<CreateItem>(JsonConvert.SerializeObject(createItemObject));
 
                 ItemsApi itemsApi = new ItemsApi();
                 itemsApi.Configuration.AccessToken = Credentials.TokenInternal;
@@ -456,8 +491,67 @@ namespace forgeSample.Controllers
                 return newVersion;
             }
 
-            
 
+
+        }
+        public static string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[randomWorkflowId.Next(s.Length)]).ToArray());
+        }
+        public class CreateNewObject
+        {
+
+            public CreateNewObject(JsonApiVersionJsonapi jsonApiVersionJsonapi, CreateItemData createItemData, List<CreateItemIncluded> createItemIncludeds, MetaObject metaObject)
+            {
+                this.jsonapi = jsonApiVersionJsonapi;
+                this.data = createItemData;
+                this.included = createItemIncludeds;
+                this.meta = metaObject;
+            }
+
+            public JsonApiVersionJsonapi jsonapi { get; set; }
+            public CreateItemData data { get; set; }
+            public List<CreateItemIncluded> included { get; set; }
+            public MetaObject meta { get; set; }
+        }
+
+        public class MetaObject
+        {
+
+            public MetaObject(string workFlowId, MetaWorkflowAttributeObject workflowAttribute)
+            {
+                this.workflow = workFlowId;
+                this.workflowAttribute = workflowAttribute;
+            }
+
+            public string workflow { get; set; }
+            public MetaWorkflowAttributeObject workflowAttribute { get; set; }
+        }
+
+        public class MetaWorkflowAttributeObject
+        {
+            public MetaWorkflowAttributeObject(int myFoo, string projectID, MetaWorkflowAttributeMyObjectObject myObject)
+            {
+                this.myfoo = myFoo;
+                this.projectId = projectID;
+                this.myobject = myObject;
+            }
+            public int myfoo { get; set; }
+            public string projectId { get; set; }
+
+            public MetaWorkflowAttributeMyObjectObject myobject { get; set; }
+        }
+
+
+        public class MetaWorkflowAttributeMyObjectObject
+        {
+            public MetaWorkflowAttributeMyObjectObject(bool Nested)
+            {
+                this.nested = Nested;
+            }
+            public bool nested { get; set; }
         }
 
         public async Task<string> GetHubRegion(string hubId)
@@ -506,15 +600,12 @@ namespace forgeSample.Controllers
             public string HubId { get { return ExtractHubIdFromHref(hub); } }
         }
 
-        [HttpPost]
-        [Route("api/forge/webhook")]
-        public async Task<HttpStatusCode> CreateWebHook(string workflowId)
+        public async Task CreateWebHookAsync(string workflowId, string supportedEvent, string callbackURL)
         {
             Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
-            if (Credentials == null) { return (HttpStatusCode)401; ; }
 
             WebhookObject webhook = new WebhookObject();
-            webhook.callbackUrl =  CallbackUrl;
+            webhook.callbackUrl = callbackURL;
             webhook.scope.workflow = workflowId;
 
             string json = JsonConvert.SerializeObject(webhook);
@@ -523,12 +614,17 @@ namespace forgeSample.Controllers
             var request = new RestRequest("webhooks/v1/systems/derivative/events/{supportedEvent}/hooks");
             request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
             request.AddHeader("x-ads-region", "US");
-            request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
+            request.AddUrlSegment("supportedEvent", supportedEvent);
             request.AddJsonBody(jsonObject);
             var response = client.Post(request);
+        }
 
-            return response.StatusCode;
-
+        [HttpPost]
+        [Route("/api/forge/callback/webhook")]
+        public async Task<IActionResult> DerivativeCallback([FromBody] JObject body)
+        {
+            await DataManagementHub.ExtractionFinished(_hubContext, body);
+            return Ok();
         }
 
         [HttpGet]
@@ -566,54 +662,13 @@ namespace forgeSample.Controllers
 
         }
 
-
-        [HttpPost]
-        [Route("api/forge/newItem")]
-        public async Task<string> PostNewItem(string folderId, string name, string workflowId, string projectId)
-        {
-            Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
-            if (Credentials == null) { return null ; }
-
-            CreateItemObject createItemObject = new CreateItemObject();
-            createItemObject.jsonapi.version = "1.0";
-            createItemObject.data.type = "items";
-            createItemObject.data.relationships.tip.data.type = "versions";
-            createItemObject.data.relationships.tip.data.id = "1";
-            createItemObject.data.relationships.parent.data.type = "folders";
-            createItemObject.data.relationships.parent.data.id = folderId;
-            CreateIncludedObject createIncludedObject = new CreateIncludedObject();
-            createIncludedObject.type = "versions";
-            createIncludedObject.id = "1";
-            createIncludedObject.attributes.name = name;
-            createItemObject.included = new List<CreateIncludedObject>() { createIncludedObject };
-            createItemObject.meta.workflow = workflowId;
-            createItemObject.meta.workflowAttribute.myfoo = 33;
-            createItemObject.meta.workflowAttribute.projectId = projectId;
-            createItemObject.meta.workflowAttribute.myobject.nested = true;
-
-            string json = JsonConvert.SerializeObject(createItemObject);
-
-            dynamic jsonObject = JsonConvert.DeserializeObject<CreateItemObject>(json);
-            var request = new RestRequest("/data/v1/projects/{project_id}/items");
-            request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
-            request.AddHeader("Content-Type", "application/vnd.api+json");
-            request.AddHeader("x-ads-region", "US");
-            request.AddUrlSegment("project_id", projectId);
-            request.AddQueryParameter("copyFrom", VersionId);
-            request.AddJsonBody(jsonObject);
-            var response = client.Post(request);
-
-            Console.WriteLine(response.Content.ToString());
-
-            return response.Content;
-
-        }
-
         public class UploadFile
         {
             //[ModelBinder(BinderType = typeof(FormDataJsonBinder))]
             public string folderHref { get; set; }
             public IFormFile fileToUpload { get; set; }
+
+            public string connectionId { get; set; }
             // Other properties
         }
 
@@ -636,123 +691,6 @@ namespace forgeSample.Controllers
             return System.Convert.ToBase64String(plainTextBytes).Replace("/", "_");
         }
 
-        public class CreateItemObject
-        {
-            public CreateItemObject()
-            {
-                this.jsonapi = new CreateJsonAPIObject();
-                this.data = new CreateDataObject();
-                this.included = new List<CreateIncludedObject>();
-                this.meta = new MetaObject();
-            }
-
-            public CreateJsonAPIObject jsonapi { get; set; }
-            public CreateDataObject data { get; set; }
-            public List<CreateIncludedObject> included { get; set; }
-            public MetaObject meta { get; set; }
-        }
-
-        public class CreateJsonAPIObject
-        {
-            public string version { get; set; }
-        }
-
-        public class CreateDataObject
-        {
-            public CreateDataObject()
-            {
-                this.relationships = new CreateDataRelationshipsObject();
-            }
-            public string type { get; set; }
-            public CreateDataRelationshipsObject relationships { get; set; }
-        }
-     
-  
-        public class CreateDataRelationshipsObject
-        {
-            public CreateDataRelationshipsObject()
-            {
-                this.tip = new CreateRelationshipsTipObject();
-                this.parent = new CreateRelationshipsParentObject();
-            }
-            public CreateRelationshipsTipObject tip { get; set; }
-            public CreateRelationshipsParentObject parent { get; set; }
-
-        }
-        public class CreateRelationshipsTipObject
-        {
-            public CreateRelationshipsTipObject()
-            {
-                this.data = new CreateTipDataObject();
-            }
-
-            public CreateTipDataObject data { get; set; }
-        }
-        public class CreateTipDataObject
-        {
-            public string type { get; set; }
-            public string id { get; set; }
-        }
-        public class CreateRelationshipsParentObject
-        {
-            public CreateRelationshipsParentObject()
-            {
-                this.data = new CreateParentDataObject();
-            }
-
-            public CreateParentDataObject data { get; set; }
-        }
-
-        public class CreateParentDataObject
-        {
-            public string type { get; set; }
-            public string id { get; set; }
-        }
-
-        public class CreateIncludedObject
-        {
-            public CreateIncludedObject()
-            {
-                this.attributes = new CreateIncludedObjectAttributes();
-            }
-            public string type { get; set; }
-            public string id { get; set; }
-            public CreateIncludedObjectAttributes attributes { get; set; }
-        }
-        public class CreateIncludedObjectAttributes
-        {
-            public string name { get; set; }
-        }
-  
-
-        public class MetaObject
-        {
-            public MetaObject()
-            {
-                this.workflowAttribute = new MetaWorkflowAttributeObject();
-            }
-            public string workflow { get; set; }
-            public MetaWorkflowAttributeObject workflowAttribute { get; set; }
-        }
-
-        public class MetaWorkflowAttributeObject
-        {
-            public MetaWorkflowAttributeObject()
-            {
-                this.myobject = new MetaWorkflowAttributeMyObjectObject();
-            }
-            public int myfoo { get; set; }
-            public string projectId { get; set; }
-
-            public MetaWorkflowAttributeMyObjectObject myobject { get; set; }
-        }
-
-
-        public class MetaWorkflowAttributeMyObjectObject
-        {
-            public bool nested { get; set; }
-        }
-
 
 
         public class WebhookObject
@@ -763,21 +701,17 @@ namespace forgeSample.Controllers
                 this.scope = new Scope();
 
             }
-            //[ModelBinder(BinderType = typeof(FormDataJsonBinder))]
             public string callbackUrl { get; set; }
             public Scope scope { get; set; }
-            // Other properties
         }
 
         public class Scope
         {
-            //[ModelBinder(BinderType = typeof(FormDataJsonBinder))]
             public string workflow { get; set; }
-            // Other properties
         }
 
         public class MetaData
-        { 
+        {
             public string workflow { get; set; }
         }
 
@@ -808,7 +742,7 @@ namespace forgeSample.Controllers
                 this.formats = new List<FormatsObject>();
             }
 
-            public List<FormatsObject> formats {get; set;}
+            public List<FormatsObject> formats { get; set; }
         }
 
         public class FormatsObject
@@ -838,7 +772,7 @@ namespace forgeSample.Controllers
             Iges,
             Obj,
             Ifc,
-            Dwg 
+            Dwg
         }
 
         private string ConvertToString(SupportedEvents supportedEvents)
@@ -895,5 +829,17 @@ namespace forgeSample.Controllers
             }
         }
 
+    }
+
+
+    public class DataManagementHub : Microsoft.AspNetCore.SignalR.Hub
+    {
+        public string GetConnectionId() { return Context.ConnectionId; }
+
+        public async static Task ExtractionFinished(IHubContext<DataManagementHub> context, JObject body)
+        {
+            string connectionId = body["hook"]["scope"]["workflow"].Value<String>();
+            await context.Clients.Client(connectionId).SendAsync("extractionFinished", body);
+        }
     }
 }

@@ -6,11 +6,13 @@ using Microsoft.Extensions.Hosting;
 using Hangfire;
 using Hangfire.MemoryStorage;
 using Microsoft.Extensions.Configuration;
+using forgeSample.Controllers;
 
 namespace forgeSample
 {
     public class Startup
     {
+        private Credentials Credentials { get; set; }
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -23,6 +25,9 @@ namespace forgeSample
         {
             services.AddHangfire(x => x.UseMemoryStorage());
             services.AddMvc(options => options.EnableEndpointRouting = false).SetCompatibilityVersion(CompatibilityVersion.Version_3_0).AddNewtonsoftJson();
+            services.AddSignalR().AddNewtonsoftJsonProtocol(opt => {
+                opt.PayloadSerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -37,9 +42,19 @@ namespace forgeSample
                 app.UseHsts();
             }
 
+            app.UseRouting();
             app.UseDefaultFiles();
             app.UseStaticFiles();
             app.UseHttpsRedirection();
+            app.UseCors(options =>
+                options.WithOrigins(Credentials.GetAppSetting("FORGE_WEBHOOK_URL")).AllowAnyMethod()
+            //options.WithOrigins(Controllers.OAuthController.GetAppSetting("FORGE_WEBHOOK_URL")).AllowAnyMethod()
+            );
+            app.UseEndpoints(routes =>
+            {
+                routes.MapHub<Controllers.DataManagementHub>("/api/signalr/datamanagement");
+            });
+
             app.UseMvc();
 
             // Hangfire
