@@ -21,12 +21,19 @@ body {
 #forgeViewer {
   width: 100%;
 }
+.webhooks {
+    width: 100%;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 
 .toolbarC3DDesignCheck {
-  background-image: url(/img/design_check.png);
-  background-size: 24px;
-  background-repeat: no-repeat;
-  background-position: center;
+    background-image: url(/img/design_check.png);
+    background-size: 24px;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .alignItem{

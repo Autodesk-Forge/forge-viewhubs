@@ -27,21 +27,37 @@ using System.Net;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
+using RestSharp;
+using Newtonsoft.Json;
+using Hangfire;
+using System.Diagnostics;
+using System.Linq;
+using Microsoft.AspNetCore.SignalR;
+
 
 namespace forgeSample.Controllers
 {
     public class DataManagementController : ControllerBase
     {
+
+        private IHubContext<DataManagementHub> _hubContext;
+
         private IWebHostEnvironment _env;
-        public DataManagementController(IWebHostEnvironment env)
+        private static RestClient client = new RestClient("https://developer.api.autodesk.com");
+        private static Random randomWorkflowId = new Random();
+        public DataManagementController(IWebHostEnvironment env, IHubContext<DataManagementHub> hubContext)
         {
             _env = env;
+            _hubContext = hubContext;
         }
 
         /// <summary>
         /// Credentials on this request
         /// </summary>
         private Credentials Credentials { get; set; }
+
+        public string CallbackUrl { get { return Credentials.GetAppSetting("FORGE_WEBHOOK_URL") + "/api/forge/callback/webhook"; } }
+        public string VersionId { get { return Credentials.GetAppSetting("VERSION_ID"); } }
 
         /// <summary>
         /// GET TreeNode passing the ID
@@ -183,7 +199,8 @@ namespace forgeSample.Controllers
             // check if folder specifies visible types
             JArray visibleTypes = null;
             dynamic folder = (await folderApi.GetFolderAsync(projectId, folderId)).ToJson();
-            if (folder.data.attributes != null && folder.data.attributes.extension != null && folder.data.attributes.extension.data != null && !(folder.data.attributes.extension.data is JArray) && folder.data.attributes.extension.data.visibleTypes != null){
+            if (folder.data.attributes != null && folder.data.attributes.extension != null && folder.data.attributes.extension.data != null && !(folder.data.attributes.extension.data is JArray) && folder.data.attributes.extension.data.visibleTypes != null)
+            {
                 visibleTypes = folder.data.attributes.extension.data.visibleTypes;
                 visibleTypes.Add("items:autodesk.bim360:C4RModel"); // C4R models are not returned on visibleTypes, therefore add them here
             }
@@ -282,11 +299,7 @@ namespace forgeSample.Controllers
             return nodes;
         }
 
-        public static string Base64Encode(string plainText)
-        {
-            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
-            return System.Convert.ToBase64String(plainTextBytes).Replace("/", "_");
-        }
+
 
         public class jsTreeNode
         {
@@ -312,7 +325,7 @@ namespace forgeSample.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("api/forge/datamanagement")]
-        public async Task<dynamic> UploadObject([FromForm]UploadFile input)
+        public async Task<dynamic> UploadObject([FromForm] UploadFile input)
         {
             // get the uploaded file and save on the server
             var fileSavePath = Path.Combine(_env.ContentRootPath, input.fileToUpload.FileName);
@@ -424,7 +437,34 @@ namespace forgeSample.Controllers
                 CreateItemRelationshipsStorage createItemRelationshipsStorage = new CreateItemRelationshipsStorage(createItemRelationshipsStorageData);
                 CreateItemRelationships createItemRelationship = new CreateItemRelationships(createItemRelationshipsStorage);
                 CreateItemIncluded includedVersion = new CreateItemIncluded(CreateItemIncluded.TypeEnum.Versions, CreateItemIncluded.IdEnum._1, storageDataAtt, createItemRelationship);
-                CreateItem createItem = new CreateItem(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), createItemData, new List<CreateItemIncluded>() { includedVersion });
+ 
+                IList<GetHookData.Hook> hooks = await Hooks();
+                bool createHook = true;
+                foreach (GetHookData.Hook hook in hooks)
+                {
+                    if (hook.tenant.Equals(input.connectionId))
+                    {
+                        createHook = false;
+                        if (!hook.callbackUrl.Equals(CallbackUrl))
+                        {
+                            RestRequest request = new RestRequest("/webhooks/v1/systems/data/events/{supportedEvent}/hooks/{webhookId}", Method.DELETE);
+                            request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
+                            request.AddUrlSegment("webhookId", hook.hookId);
+                            request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
+                            IRestResponse response = await client.ExecuteAsync(request);
+                            createHook = true;
+                        }
+                    }
+                }
+
+                var workFlowId = RandomString(36);
+                if (createHook) await CreateWebHookAsync(workFlowId, ConvertToString(SupportedEvents.ExtractionFinished), CallbackUrl);
+
+                MetaWorkflowAttributeMyObjectObject metaWorkflowAttributeMyObjectObject = new MetaWorkflowAttributeMyObjectObject(true);
+                MetaWorkflowAttributeObject metaWorkflowAttributeObject = new MetaWorkflowAttributeObject(33, projectId, metaWorkflowAttributeMyObjectObject);
+                MetaObject metaObject = new MetaObject(workFlowId, metaWorkflowAttributeObject);
+                CreateNewObject createItemObject = new CreateNewObject(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), createItemData, new List<CreateItemIncluded>() { includedVersion }, metaObject);
+                CreateItem createItem = JsonConvert.DeserializeObject<CreateItem>(JsonConvert.SerializeObject(createItemObject));
 
                 ItemsApi itemsApi = new ItemsApi();
                 itemsApi.Configuration.AccessToken = Credentials.TokenInternal;
@@ -442,6 +482,7 @@ namespace forgeSample.Controllers
                 CreateItemRelationshipsStorage itemRelationshipsStorage = new CreateItemRelationshipsStorage(itemRelationshipsStorageData);
                 CreateVersionDataRelationships dataRelationships = new CreateVersionDataRelationships(dataRelationshipsItem, itemRelationshipsStorage);
                 CreateVersionData versionData = new CreateVersionData(CreateVersionData.TypeEnum.Versions, storageDataAtt, dataRelationships);
+                //MetaData metaData = new MetaData();
                 CreateVersion newVersionData = new CreateVersion(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), versionData);
 
                 VersionsApi versionsApis = new VersionsApi();
@@ -449,6 +490,176 @@ namespace forgeSample.Controllers
                 dynamic newVersion = await versionsApis.PostVersionAsync(projectId, newVersionData);
                 return newVersion;
             }
+
+
+
+        }
+        public static string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[randomWorkflowId.Next(s.Length)]).ToArray());
+        }
+        public class CreateNewObject
+        {
+
+            public CreateNewObject(JsonApiVersionJsonapi jsonApiVersionJsonapi, CreateItemData createItemData, List<CreateItemIncluded> createItemIncludeds, MetaObject metaObject)
+            {
+                this.jsonapi = jsonApiVersionJsonapi;
+                this.data = createItemData;
+                this.included = createItemIncludeds;
+                this.meta = metaObject;
+            }
+
+            public JsonApiVersionJsonapi jsonapi { get; set; }
+            public CreateItemData data { get; set; }
+            public List<CreateItemIncluded> included { get; set; }
+            public MetaObject meta { get; set; }
+        }
+
+        public class MetaObject
+        {
+
+            public MetaObject(string workFlowId, MetaWorkflowAttributeObject workflowAttribute)
+            {
+                this.workflow = workFlowId;
+                this.workflowAttribute = workflowAttribute;
+            }
+
+            public string workflow { get; set; }
+            public MetaWorkflowAttributeObject workflowAttribute { get; set; }
+        }
+
+        public class MetaWorkflowAttributeObject
+        {
+            public MetaWorkflowAttributeObject(int myFoo, string projectID, MetaWorkflowAttributeMyObjectObject myObject)
+            {
+                this.myfoo = myFoo;
+                this.projectId = projectID;
+                this.myobject = myObject;
+            }
+            public int myfoo { get; set; }
+            public string projectId { get; set; }
+
+            public MetaWorkflowAttributeMyObjectObject myobject { get; set; }
+        }
+
+
+        public class MetaWorkflowAttributeMyObjectObject
+        {
+            public MetaWorkflowAttributeMyObjectObject(bool Nested)
+            {
+                this.nested = Nested;
+            }
+            public bool nested { get; set; }
+        }
+
+        public async Task<string> GetHubRegion(string hubId)
+        {
+            Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
+            HubsApi hubsApi = new HubsApi();
+            hubsApi.Configuration.AccessToken = Credentials.TokenInternal;
+            var hub = await hubsApi.GetHubAsync(hubId);
+            return hub.data.attributes.region;
+        }
+
+        public class HookInputData
+        {
+            public static string ExtractFolderIdFromHref(string href)
+            {
+                string[] idParams = href.Split('/');
+                Console.WriteLine(href);
+                string resource = idParams[idParams.Length - 2];
+                string folderId = idParams[idParams.Length - 1];
+                if (!resource.Equals("folders")) return string.Empty;
+                return folderId;
+            }
+
+            public static string ExtractProjectIdFromHref(string href)
+            {
+                string[] idParams = href.Split('/');
+                string resource = idParams[idParams.Length - 4];
+                string folderId = idParams[idParams.Length - 3];
+                if (!resource.Equals("projects")) return string.Empty;
+                return folderId;
+            }
+
+            public static string ExtractHubIdFromHref(string href)
+            {
+                string[] idParams = href.Split('/');
+                string resource = idParams[idParams.Length - 2];
+                string hubId = idParams[idParams.Length - 1];
+                if (!resource.Equals("hubs")) return string.Empty;
+                return hubId;
+            }
+            public string folder { get; set; }
+            public string hub { get; set; }
+
+            public string FolderId { get { return ExtractFolderIdFromHref(folder); } }
+            public string ProjectId { get { return ExtractProjectIdFromHref(folder); } }
+            public string HubId { get { return ExtractHubIdFromHref(hub); } }
+        }
+
+        public async Task CreateWebHookAsync(string workflowId, string supportedEvent, string callbackURL)
+        {
+            Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
+
+            WebhookObject webhook = new WebhookObject();
+            webhook.callbackUrl = callbackURL;
+            webhook.scope.workflow = workflowId;
+
+            string json = JsonConvert.SerializeObject(webhook);
+
+            dynamic jsonObject = JsonConvert.DeserializeObject<WebhookObject>(json);
+            var request = new RestRequest("webhooks/v1/systems/derivative/events/{supportedEvent}/hooks");
+            request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
+            request.AddHeader("x-ads-region", "US");
+            request.AddUrlSegment("supportedEvent", supportedEvent);
+            request.AddJsonBody(jsonObject);
+            var response = client.Post(request);
+        }
+
+        [HttpPost]
+        [Route("/api/forge/callback/webhook")]
+        public async Task<IActionResult> DerivativeCallback([FromBody] JObject body)
+        {
+            await DataManagementHub.ExtractionFinished(_hubContext, body);
+            return Ok();
+        }
+
+        [HttpGet]
+        [Route("api/forge/webhook")]
+        public async Task<IList<GetHookData.Hook>> GetHooks()
+        {
+            Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
+            if (Credentials == null) { return null; }
+            IList<GetHookData.Hook> hooks = await Hooks();
+            return hooks;
+        }
+
+
+        [HttpGet]
+        [Route("api/forge/webhook/delete")]
+        public async Task<IDictionary<string, HttpStatusCode>> DeleteHook()
+        {
+            Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
+
+            IList<GetHookData.Hook> hooks = await Hooks();
+            IDictionary<string, HttpStatusCode> status = new Dictionary<string, HttpStatusCode>();
+
+            foreach (GetHookData.Hook hook in hooks)
+            {
+
+                RestRequest request = new RestRequest("/webhooks/v1/systems/data/events/{supportedEvent}/hooks/{webhookId}", Method.DELETE);
+                request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
+                request.AddUrlSegment("webhookId", hook.hookId);
+                request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
+                IRestResponse response = await client.ExecuteAsync(request);
+                status.Add(hook.hookId, response.StatusCode);
+            }
+
+            return status;
+
         }
 
         public class UploadFile
@@ -456,8 +667,179 @@ namespace forgeSample.Controllers
             //[ModelBinder(BinderType = typeof(FormDataJsonBinder))]
             public string folderHref { get; set; }
             public IFormFile fileToUpload { get; set; }
+
+            public string connectionId { get; set; }
             // Other properties
         }
 
+        public async Task<IList<GetHookData.Hook>> Hooks()
+        {
+            Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
+            if (Credentials == null) { return null; }
+
+            RestRequest request = new RestRequest("/webhooks/v1/hooks", Method.GET);
+            request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
+            request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
+            IRestResponse<GetHookData> response = await client.ExecuteAsync<GetHookData>(request);
+
+            return response.Data.data;
+        }
+
+        public static string Base64Encode(string plainText)
+        {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return System.Convert.ToBase64String(plainTextBytes).Replace("/", "_");
+        }
+
+
+
+        public class WebhookObject
+        {
+
+            public WebhookObject()
+            {
+                this.scope = new Scope();
+
+            }
+            public string callbackUrl { get; set; }
+            public Scope scope { get; set; }
+        }
+
+        public class Scope
+        {
+            public string workflow { get; set; }
+        }
+
+        public class MetaData
+        {
+            public string workflow { get; set; }
+        }
+
+
+        public class JobPayloadObject
+        {
+            public JobPayloadObject()
+            {
+                this.input = new InputObject();
+                this.output = new OutputObject();
+                this.misc = new MiscObject();
+            }
+
+            public InputObject input { get; set; }
+            public OutputObject output { get; set; }
+            public MiscObject misc { get; set; }
+        }
+
+        public class InputObject
+        {
+            public string urn { get; set; }
+        }
+
+        public class OutputObject
+        {
+            public OutputObject()
+            {
+                this.formats = new List<FormatsObject>();
+            }
+
+            public List<FormatsObject> formats { get; set; }
+        }
+
+        public class FormatsObject
+        {
+            public string type { get; set; }
+        }
+
+        public class MiscObject
+        {
+            public string workflow { get; set; }
+
+        }
+
+        public enum SupportedEvents
+        {
+            ExtractionFinished,
+            ExtractionUpdated,
+        }
+
+        public enum FormatType
+        {
+            Svf,
+            Svf2,
+            Thumbnail,
+            Stl,
+            Step,
+            Iges,
+            Obj,
+            Ifc,
+            Dwg
+        }
+
+        private string ConvertToString(SupportedEvents supportedEvents)
+        {
+            var supportedEvent = "";
+
+            switch (supportedEvents)
+            {
+                case SupportedEvents.ExtractionFinished:
+                    supportedEvent = "extraction.finished";
+                    break;
+                case SupportedEvents.ExtractionUpdated:
+                    supportedEvent = "extraction.updated";
+                    break;
+            }
+            return supportedEvent;
+        }
+
+        public static string URNBase64Encode(string plainText)
+        {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return System.Convert.ToBase64String(plainTextBytes);
+        }
+
+        public class GetHookData
+        {
+            public Links links { get; set; }
+            public List<Hook> data { get; set; }
+
+            public class Links
+            {
+                public object next { get; set; }
+            }
+
+            public class Hook
+            {
+                public string hookId { get; set; }
+                public string tenant { get; set; }
+                public string callbackUrl { get; set; }
+                public string createdBy { get; set; }
+                public string @event { get; set; }
+                public DateTime createdDate { get; set; }
+                public string system { get; set; }
+                public string creatorType { get; set; }
+                public string status { get; set; }
+                public Scope scope { get; set; }
+                public string urn { get; set; }
+                public string __self__ { get; set; }
+
+                public class Scope
+                {
+                    public string folder { get; set; }
+                }
+            }
+        }
+
+    }
+
+
+    public class DataManagementHub : Microsoft.AspNetCore.SignalR.Hub
+    {
+        public string GetConnectionId() { return Context.ConnectionId; }
+
+        public async static Task ExtractionFinished(IHubContext<DataManagementHub> context, JObject body)
+        {
+            string connectionId = body["hook"]["scope"]["workflow"].Value<String>();
+            await context.Clients.Client(connectionId).SendAsync("extractionFinished", body);
+        }
     }
 }
