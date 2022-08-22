@@ -69,26 +69,30 @@ $(document).ready(function () {
         var _this = this;
         if (_this.files.length == 0) return;
         var file = _this.files[0];
-        switch (node.type) {
-            case 'folders':
-                var formData = new FormData();
-                formData.append('fileToUpload', file);
-                formData.append('folderHref', node.id);
-                _this.value = '';
+        startConnection(function () {
+            switch (node.type) {
+                case 'folders':
+                    var formData = new FormData();
+                    formData.append('fileToUpload', file);
+                    formData.append('folderHref', node.id);
+                    formData.append('connectionId', connectionId);
+                    console.log(connectionId, "one");
+                    _this.value = '';
 
-                $.ajax({
-                    url: '/api/forge/datamanagement',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    type: 'POST',
-                    success: function (data) {
-                        $('#userHubs').jstree(true).refresh_node(node);
-                        _this.value = '';
-                    }
-                });
-                break;
-        }
+                    $.ajax({
+                        url: '/api/forge/datamanagement',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        type: 'POST',
+                        success: function (data) {
+                            $('#userHubs').jstree(true).refresh_node(node);
+                            _this.value = '';
+                        }
+                    });
+                    break;
+            }
+        });
     });
 });
 
@@ -188,11 +192,14 @@ function prepareUserHubsTree() {
 }
 
 function autodeskCustomMenu(autodeskNode) {
+
     var items;
+
     switch (autodeskNode.type) {
         case "versions":
             var parent = $('#userHubs').jstree(true).get_node(autodeskNode.parent);
             if (parent.text.indexOf('.rvt') == -1) return;
+            console.log(connectionId, "two");
             items = {
                 translateIfc: {
                     label: "Translate to IFC",
@@ -217,13 +224,14 @@ function autodeskCustomMenu(autodeskNode) {
                     action: function () {
                         uploadFile();
                     },
-                    icon: 'glyphicon glyphicon-cloud-upload'
+                    icon: 'glyphicon glyphicon-cloud-upload',
                 }
             }
             break;
     }
 
     return items;
+
 }
 
 function uploadFile() {
@@ -237,5 +245,33 @@ function showUser() {
             var img = '<img src="' + profile.picture + '" height="30px">';
             $('#userInfo').html(img + profile.name);
         }
+    });
+}
+
+var connection;
+var connectionId;
+
+function startConnection(onReady) {
+    if (connection && connection.connectionState) { if (onReady) onReady(); return; }
+    connection = new signalR.HubConnectionBuilder().withUrl("/api/signalr/datamanagement").withAutomaticReconnect().build();
+    connection.start()
+        .then(function () {
+            connection.invoke('getConnectionId')
+                .then(function (id) {
+                    if (id.indexOf('_') !== -1) {
+                        console.log('Restarting...');
+                        connection.stop(); // need to fix this..
+                        connection = null;
+                        startConnection();
+                        return;
+                    }
+                    connectionId = id; // we'll need this...
+                    if (onReady) onReady();
+                });
+        });
+
+    connection.on("extractionFinished", function (data) {
+        $("#forgeViewer").empty();
+        launchViewer(data.resourceUrn);
     });
 }
