@@ -33,6 +33,7 @@ using Hangfire;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.AspNetCore.SignalR;
+using static forgeSample.Controllers.DataManagementController.GetHookData;
 
 
 namespace forgeSample.Controllers
@@ -419,6 +420,32 @@ namespace forgeSample.Controllers
                 if (item.Value.attributes.displayName == fileName)
                     itemId = item.Value.id; // this means a file with same name is already there, so we'll create a new version
 
+
+            //create webhook
+            IList<GetHookData.Hook> hooks = await Hooks();
+            bool createHook = true;
+            foreach (GetHookData.Hook hook in hooks)
+            {
+                if (hook.scope.workflow.Equals(input.connectionId))
+                {
+                    createHook = false;
+                    if (!hook.callbackUrl.Equals(CallbackUrl))
+                    {
+                        RestRequest request = new RestRequest("/webhooks/v1/systems/data/events/{supportedEvent}/hooks/{webhookId}", Method.DELETE);
+                        request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
+                        request.AddUrlSegment("webhookId", hook.hookId);
+                        request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
+                        IRestResponse response = await client.ExecuteAsync(request);
+                        createHook = true;
+                    }
+                }
+            }
+
+            if (createHook) await CreateWebHookAsync(input.connectionId, ConvertToString(SupportedEvents.ExtractionFinished), CallbackUrl);
+
+            MetaWorkflowAttributeObject metaWorkflowAttributeObject = new MetaWorkflowAttributeObject(input.connectionId);
+            MetaObject metaObject = new MetaObject(input.connectionId, metaWorkflowAttributeObject);
+
             // now decide whether create a new item or new version
             if (string.IsNullOrWhiteSpace(itemId))
             {
@@ -437,32 +464,6 @@ namespace forgeSample.Controllers
                 CreateItemRelationshipsStorage createItemRelationshipsStorage = new CreateItemRelationshipsStorage(createItemRelationshipsStorageData);
                 CreateItemRelationships createItemRelationship = new CreateItemRelationships(createItemRelationshipsStorage);
                 CreateItemIncluded includedVersion = new CreateItemIncluded(CreateItemIncluded.TypeEnum.Versions, CreateItemIncluded.IdEnum._1, storageDataAtt, createItemRelationship);
- 
-                IList<GetHookData.Hook> hooks = await Hooks();
-                bool createHook = true;
-                foreach (GetHookData.Hook hook in hooks)
-                {
-                    if (hook.tenant.Equals(input.connectionId))
-                    {
-                        createHook = false;
-                        if (!hook.callbackUrl.Equals(CallbackUrl))
-                        {
-                            RestRequest request = new RestRequest("/webhooks/v1/systems/data/events/{supportedEvent}/hooks/{webhookId}", Method.DELETE);
-                            request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
-                            request.AddUrlSegment("webhookId", hook.hookId);
-                            request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
-                            IRestResponse response = await client.ExecuteAsync(request);
-                            createHook = true;
-                        }
-                    }
-                }
-
-                var workFlowId = RandomString(36);
-                if (createHook) await CreateWebHookAsync(workFlowId, ConvertToString(SupportedEvents.ExtractionFinished), CallbackUrl);
-
-                MetaWorkflowAttributeMyObjectObject metaWorkflowAttributeMyObjectObject = new MetaWorkflowAttributeMyObjectObject(true);
-                MetaWorkflowAttributeObject metaWorkflowAttributeObject = new MetaWorkflowAttributeObject(33, projectId, metaWorkflowAttributeMyObjectObject);
-                MetaObject metaObject = new MetaObject(workFlowId, metaWorkflowAttributeObject);
                 CreateNewObject createItemObject = new CreateNewObject(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), createItemData, new List<CreateItemIncluded>() { includedVersion }, metaObject);
                 CreateItem createItem = JsonConvert.DeserializeObject<CreateItem>(JsonConvert.SerializeObject(createItemObject));
 
@@ -482,8 +483,8 @@ namespace forgeSample.Controllers
                 CreateItemRelationshipsStorage itemRelationshipsStorage = new CreateItemRelationshipsStorage(itemRelationshipsStorageData);
                 CreateVersionDataRelationships dataRelationships = new CreateVersionDataRelationships(dataRelationshipsItem, itemRelationshipsStorage);
                 CreateVersionData versionData = new CreateVersionData(CreateVersionData.TypeEnum.Versions, storageDataAtt, dataRelationships);
-                //MetaData metaData = new MetaData();
-                CreateVersion newVersionData = new CreateVersion(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), versionData);
+                CreateNewObjectVersion createNewObjectVersion = new CreateNewObjectVersion(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), versionData, metaObject);
+                CreateVersion newVersionData = JsonConvert.DeserializeObject<CreateVersion>(JsonConvert.SerializeObject(createNewObjectVersion));
 
                 VersionsApi versionsApis = new VersionsApi();
                 versionsApis.Configuration.AccessToken = Credentials.TokenInternal;
@@ -493,12 +494,6 @@ namespace forgeSample.Controllers
 
 
 
-        }
-        public static string RandomString(int length)
-        {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            return new string(Enumerable.Repeat(chars, length)
-              .Select(s => s[randomWorkflowId.Next(s.Length)]).ToArray());
         }
         public class CreateNewObject
         {
@@ -517,6 +512,21 @@ namespace forgeSample.Controllers
             public MetaObject meta { get; set; }
         }
 
+        public class CreateNewObjectVersion
+        {
+
+            public CreateNewObjectVersion(JsonApiVersionJsonapi jsonApiVersionJsonapi, CreateVersionData versionData, MetaObject metaObject)
+            {
+                this.jsonapi = jsonApiVersionJsonapi;
+                this.data = versionData;
+                this.meta = metaObject;
+            }
+
+            public JsonApiVersionJsonapi jsonapi { get; set; }
+            public CreateVersionData data { get; set; }
+            public MetaObject meta { get; set; }
+        }
+
         public class MetaObject
         {
 
@@ -532,16 +542,11 @@ namespace forgeSample.Controllers
 
         public class MetaWorkflowAttributeObject
         {
-            public MetaWorkflowAttributeObject(int myFoo, string projectID, MetaWorkflowAttributeMyObjectObject myObject)
+            public MetaWorkflowAttributeObject(string connectionID)
             {
-                this.myfoo = myFoo;
-                this.projectId = projectID;
-                this.myobject = myObject;
+                this.connectionId = connectionID;
             }
-            public int myfoo { get; set; }
-            public string projectId { get; set; }
-
-            public MetaWorkflowAttributeMyObjectObject myobject { get; set; }
+            public string connectionId { get; set; }
         }
 
 
@@ -621,7 +626,7 @@ namespace forgeSample.Controllers
 
         [HttpPost]
         [Route("/api/forge/callback/webhook")]
-        public async Task<IActionResult> DerivativeCallback([FromBody] JObject body)
+        public async Task<IActionResult> WebhookCallback([FromBody] JObject body)
         {
             await DataManagementHub.ExtractionFinished(_hubContext, body);
             return Ok();
@@ -669,6 +674,7 @@ namespace forgeSample.Controllers
             public IFormFile fileToUpload { get; set; }
 
             public string connectionId { get; set; }
+
             // Other properties
         }
 
@@ -688,9 +694,8 @@ namespace forgeSample.Controllers
         public static string Base64Encode(string plainText)
         {
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
-            return System.Convert.ToBase64String(plainTextBytes).Replace("/", "_");
+            return System.Convert.ToBase64String(plainTextBytes);
         }
-
 
 
         public class WebhookObject
@@ -824,7 +829,7 @@ namespace forgeSample.Controllers
 
                 public class Scope
                 {
-                    public string folder { get; set; }
+                    public string workflow { get; set; }
                 }
             }
         }
