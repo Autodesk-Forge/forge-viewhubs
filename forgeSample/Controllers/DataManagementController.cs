@@ -34,7 +34,8 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.AspNetCore.SignalR;
 using static forgeSample.Controllers.DataManagementController.GetHookData;
-
+using System.Text;
+using System.Runtime.Serialization;
 
 namespace forgeSample.Controllers
 {
@@ -422,29 +423,26 @@ namespace forgeSample.Controllers
 
 
             //create webhook
-            IList<GetHookData.Hook> hooks = await Hooks();
-            bool createHook = true;
+            string workflowId = "dm-extraction-finished";
+            IList<GetHookData.Hook> hooks = await Hooks(SupportedEvents.ExtractionFinished);
             foreach (GetHookData.Hook hook in hooks)
             {
-                if (hook.scope.workflow.Equals(input.connectionId))
-                {
-                    createHook = false;
-                    if (!hook.callbackUrl.Equals(CallbackUrl))
-                    {
-                        RestRequest request = new RestRequest("/webhooks/v1/systems/data/events/{supportedEvent}/hooks/{webhookId}", Method.DELETE);
-                        request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
-                        request.AddUrlSegment("webhookId", hook.hookId);
-                        request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
-                        IRestResponse response = await client.ExecuteAsync(request);
-                        createHook = true;
-                    }
-                }
+                if (hook.scope.workflow != workflowId) continue; // not this webhook, skip
+                if (hook.callbackUrl == CallbackUrl) continue; // already here, no need to create or delete
+
+                // if there is already a hook for the same workflowId, but pointing to a different
+                // callbackUrl, let's delete and create again, in order to update the callbackUrl
+                RestRequest request = new RestRequest("/webhooks/v1/systems/data/events/{supportedEvent}/hooks/{webhookId}", Method.DELETE);
+                request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
+                request.AddUrlSegment("webhookId", hook.hookId);
+                request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
+                IRestResponse response = await client.ExecuteAsync(request);
+
+                await CreateWebHookAsync(workflowId, ConvertToString(SupportedEvents.ExtractionFinished), CallbackUrl);
             }
 
-            if (createHook) await CreateWebHookAsync(input.connectionId, ConvertToString(SupportedEvents.ExtractionFinished), CallbackUrl);
-
             MetaWorkflowAttributeObject metaWorkflowAttributeObject = new MetaWorkflowAttributeObject(input.connectionId);
-            MetaObject metaObject = new MetaObject(input.connectionId, metaWorkflowAttributeObject);
+            MetaObject metaObject = new MetaObject(workflowId, metaWorkflowAttributeObject);
 
             // now decide whether create a new item or new version
             if (string.IsNullOrWhiteSpace(itemId))
@@ -484,11 +482,10 @@ namespace forgeSample.Controllers
                 CreateVersionDataRelationships dataRelationships = new CreateVersionDataRelationships(dataRelationshipsItem, itemRelationshipsStorage);
                 CreateVersionData versionData = new CreateVersionData(CreateVersionData.TypeEnum.Versions, storageDataAtt, dataRelationships);
                 CreateNewObjectVersion createNewObjectVersion = new CreateNewObjectVersion(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), versionData, metaObject);
-                CreateVersion newVersionData = JsonConvert.DeserializeObject<CreateVersion>(JsonConvert.SerializeObject(createNewObjectVersion));
 
                 VersionsApi versionsApis = new VersionsApi();
                 versionsApis.Configuration.AccessToken = Credentials.TokenInternal;
-                dynamic newVersion = await versionsApis.PostVersionAsync(projectId, newVersionData);
+                dynamic newVersion = await versionsApis.PostVersionAsync(projectId, createNewObjectVersion);
                 return newVersion;
             }
 
@@ -512,19 +509,18 @@ namespace forgeSample.Controllers
             public MetaObject meta { get; set; }
         }
 
-        public class CreateNewObjectVersion
+        public class CreateNewObjectVersion : CreateVersion
         {
 
             public CreateNewObjectVersion(JsonApiVersionJsonapi jsonApiVersionJsonapi, CreateVersionData versionData, MetaObject metaObject)
             {
-                this.jsonapi = jsonApiVersionJsonapi;
-                this.data = versionData;
-                this.meta = metaObject;
+                Jsonapi = jsonApiVersionJsonapi;
+                Data = versionData;
+                Meta = metaObject;
             }
 
-            public JsonApiVersionJsonapi jsonapi { get; set; }
-            public CreateVersionData data { get; set; }
-            public MetaObject meta { get; set; }
+            [DataMember(Name = "meta", EmitDefaultValue = false)]
+            public MetaObject Meta { get; set; }
         }
 
         public class MetaObject
@@ -632,41 +628,6 @@ namespace forgeSample.Controllers
             return Ok();
         }
 
-        [HttpGet]
-        [Route("api/forge/webhook")]
-        public async Task<IList<GetHookData.Hook>> GetHooks()
-        {
-            Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
-            if (Credentials == null) { return null; }
-            IList<GetHookData.Hook> hooks = await Hooks();
-            return hooks;
-        }
-
-
-        [HttpGet]
-        [Route("api/forge/webhook/delete")]
-        public async Task<IDictionary<string, HttpStatusCode>> DeleteHook()
-        {
-            Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
-
-            IList<GetHookData.Hook> hooks = await Hooks();
-            IDictionary<string, HttpStatusCode> status = new Dictionary<string, HttpStatusCode>();
-
-            foreach (GetHookData.Hook hook in hooks)
-            {
-
-                RestRequest request = new RestRequest("/webhooks/v1/systems/data/events/{supportedEvent}/hooks/{webhookId}", Method.DELETE);
-                request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
-                request.AddUrlSegment("webhookId", hook.hookId);
-                request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
-                IRestResponse response = await client.ExecuteAsync(request);
-                status.Add(hook.hookId, response.StatusCode);
-            }
-
-            return status;
-
-        }
-
         public class UploadFile
         {
             //[ModelBinder(BinderType = typeof(FormDataJsonBinder))]
@@ -678,14 +639,14 @@ namespace forgeSample.Controllers
             // Other properties
         }
 
-        public async Task<IList<GetHookData.Hook>> Hooks()
+        public async Task<IList<GetHookData.Hook>> Hooks(SupportedEvents ev)
         {
             Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
             if (Credentials == null) { return null; }
 
-            RestRequest request = new RestRequest("/webhooks/v1/hooks", Method.GET);
+            RestRequest request = new RestRequest("webhooks/v1/systems/derivative/events/{supportedEvent}/hooks", Method.GET);
             request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
-            request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
+            request.AddUrlSegment("supportedEvent", ConvertToString(ev));
             IRestResponse<GetHookData> response = await client.ExecuteAsync<GetHookData>(request);
 
             return response.Data.data;
@@ -843,7 +804,7 @@ namespace forgeSample.Controllers
 
         public async static Task ExtractionFinished(IHubContext<DataManagementHub> context, JObject body)
         {
-            string connectionId = body["hook"]["scope"]["workflow"].Value<String>();
+            string connectionId = body["payload"]["WorkflowAttributes"]["connectionId"].Value<String>();
             await context.Clients.Client(connectionId).SendAsync("extractionFinished", body);
         }
     }
