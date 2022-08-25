@@ -62,8 +62,16 @@ At the `.vscode\launch.json`, find the env vars and add your Forge Client ID, Se
     "FORGE_CLIENT_ID": "your id here",
     "FORGE_CLIENT_SECRET": "your secret here",
     "FORGE_CALLBACK_URL": "http://localhost:3000/api/forge/callback/oauth",
+    "FORGE_WEBHOOK_URL": "your callback url", e.g https://34e2-105-27-239-221.in.ngrok.io 
 },
 ```
+
+## Configure ngrok
+
+For webhooks service to send notifications to your localhost server, you may want to use ngrok. Check this link on [how to configure ngrok](https://forge.autodesk.com/en/docs/webhooks/v1/tutorials/configuring-your-server/).
+
+You can find more information on about ngrok [here](https://ngrok.com).
+
 
 ## Deployment
 
