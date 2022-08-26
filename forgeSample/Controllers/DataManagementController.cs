@@ -36,6 +36,7 @@ using Microsoft.AspNetCore.SignalR;
 using static forgeSample.Controllers.DataManagementController.GetHookData;
 using System.Text;
 using System.Runtime.Serialization;
+using Hangfire.MemoryStorage.Database;
 
 namespace forgeSample.Controllers
 {
@@ -462,12 +463,11 @@ namespace forgeSample.Controllers
                 CreateItemRelationshipsStorage createItemRelationshipsStorage = new CreateItemRelationshipsStorage(createItemRelationshipsStorageData);
                 CreateItemRelationships createItemRelationship = new CreateItemRelationships(createItemRelationshipsStorage);
                 CreateItemIncluded includedVersion = new CreateItemIncluded(CreateItemIncluded.TypeEnum.Versions, CreateItemIncluded.IdEnum._1, storageDataAtt, createItemRelationship);
-                CreateNewObject createItemObject = new CreateNewObject(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), createItemData, new List<CreateItemIncluded>() { includedVersion }, metaObject);
-                CreateItem createItem = JsonConvert.DeserializeObject<CreateItem>(JsonConvert.SerializeObject(createItemObject));
+                CreateNewItem createItemObject = new CreateNewItem(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), createItemData, new List<CreateItemIncluded>() { includedVersion }, metaObject);
 
                 ItemsApi itemsApi = new ItemsApi();
                 itemsApi.Configuration.AccessToken = Credentials.TokenInternal;
-                var newItem = await itemsApi.PostItemAsync(projectId, createItem);
+                var newItem = await itemsApi.PostItemAsync(projectId, createItemObject);
                 return newItem;
             }
             else
@@ -481,7 +481,7 @@ namespace forgeSample.Controllers
                 CreateItemRelationshipsStorage itemRelationshipsStorage = new CreateItemRelationshipsStorage(itemRelationshipsStorageData);
                 CreateVersionDataRelationships dataRelationships = new CreateVersionDataRelationships(dataRelationshipsItem, itemRelationshipsStorage);
                 CreateVersionData versionData = new CreateVersionData(CreateVersionData.TypeEnum.Versions, storageDataAtt, dataRelationships);
-                CreateNewObjectVersion createNewObjectVersion = new CreateNewObjectVersion(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), versionData, metaObject);
+                CreateItemVersion createNewObjectVersion = new CreateItemVersion(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), versionData, metaObject);
 
                 VersionsApi versionsApis = new VersionsApi();
                 versionsApis.Configuration.AccessToken = Credentials.TokenInternal;
@@ -492,27 +492,25 @@ namespace forgeSample.Controllers
 
 
         }
-        public class CreateNewObject
+        public class CreateNewItem : CreateItem
         {
 
-            public CreateNewObject(JsonApiVersionJsonapi jsonApiVersionJsonapi, CreateItemData createItemData, List<CreateItemIncluded> createItemIncludeds, MetaObject metaObject)
+            public CreateNewItem(JsonApiVersionJsonapi jsonApiVersionJsonapi, CreateItemData createItemData, List<CreateItemIncluded> createItemIncluded, MetaObject metaObject)
             {
-                this.jsonapi = jsonApiVersionJsonapi;
-                this.data = createItemData;
-                this.included = createItemIncludeds;
-                this.meta = metaObject;
+                Jsonapi = jsonApiVersionJsonapi;
+                Data = createItemData;
+                Included = createItemIncluded;
+                Meta = metaObject;
             }
 
-            public JsonApiVersionJsonapi jsonapi { get; set; }
-            public CreateItemData data { get; set; }
-            public List<CreateItemIncluded> included { get; set; }
-            public MetaObject meta { get; set; }
+            [DataMember(Name = "meta", EmitDefaultValue = false)]
+            public MetaObject Meta { get; set; }
         }
 
-        public class CreateNewObjectVersion : CreateVersion
+        public class CreateItemVersion : CreateVersion
         {
 
-            public CreateNewObjectVersion(JsonApiVersionJsonapi jsonApiVersionJsonapi, CreateVersionData versionData, MetaObject metaObject)
+            public CreateItemVersion(JsonApiVersionJsonapi jsonApiVersionJsonapi, CreateVersionData versionData, MetaObject metaObject)
             {
                 Jsonapi = jsonApiVersionJsonapi;
                 Data = versionData;
