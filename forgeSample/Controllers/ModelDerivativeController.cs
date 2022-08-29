@@ -46,7 +46,7 @@ namespace forgeSample.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("api/forge/modelderivative/jobs")]
-        public async Task<dynamic> TranslateObject([FromBody]ObjectModel objModel)
+        public async Task<dynamic> TranslateObject([FromBody] ObjectModel objModel)
         {
             Credentials credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
             DerivativesApi derivative = new DerivativesApi();
