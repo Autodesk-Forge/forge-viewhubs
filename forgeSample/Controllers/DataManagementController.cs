@@ -438,9 +438,8 @@ namespace forgeSample.Controllers
                 request.AddUrlSegment("webhookId", hook.hookId);
                 request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
                 IRestResponse response = await client.ExecuteAsync(request);
-
-                await CreateWebHookAsync(workflowId, ConvertToString(SupportedEvents.ExtractionFinished), CallbackUrl);
             }
+            await CreateWebHookAsync(workflowId, ConvertToString(SupportedEvents.ExtractionFinished), CallbackUrl);
 
             MetaWorkflowAttributeObject metaWorkflowAttributeObject = new MetaWorkflowAttributeObject(input.connectionId);
             MetaObject metaObject = new MetaObject(workflowId, metaWorkflowAttributeObject);
