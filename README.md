@@ -41,11 +41,15 @@ Clone this project or download it. It's recommended to install [GitHub desktop](
 
     git clone https://github.com/Autodesk-Forge/forge-viewhubs
 
-**Visual Studio** (Windows):
+**Visual Studio 2022** (Windows):
 
-Right-click on the project, then go to **Debug**. Adjust the settings as shown below. 
+Right-click on the project, then go to **Debug**. Click on `Open debug launch profiles UI`. Adjust the settings as shown below. 
 
-![](forgeSample/wwwroot/img/readme/visual_studio_settings.png)
+![](forgeSample/wwwroot/img/readme/debug_settings_1.png)
+
+Finally scroll down the same window to `enable SSL` and `Anonymous Authentication`. Make sure they are both checked.
+
+![](forgeSample/wwwroot/img/readme/debug_settings_2.png)
 
 **Visual Code** (Windows, MacOS):
 
