@@ -125,7 +125,7 @@ namespace forgeSample.Controllers
             cookies.Append(FORGE_COOKIE, JsonConvert.SerializeObject(credentials));
 
             // add a record on our database for the tokens and refresh token
-            OAuthDB.Register(credentials.UserId, JsonConvert.SerializeObject(credentials));
+            //OAuthDB.Register(credentials.UserId, JsonConvert.SerializeObject(credentials));
 
             return credentials;
         }
@@ -149,28 +149,9 @@ namespace forgeSample.Controllers
             Credentials credentials = JsonConvert.DeserializeObject<Credentials>(requestCookie[FORGE_COOKIE]);
             if (credentials.ExpiresAt < DateTime.Now)
             {
-                credentials = await FromDatabaseAsync(credentials.UserId);
+                await credentials.RefreshAsync();
                 responseCookie.Delete(FORGE_COOKIE);
                 responseCookie.Append(FORGE_COOKIE, JsonConvert.SerializeObject(credentials));
-            }
-
-            return credentials;
-        }
-
-        public static async Task<Credentials> FromDatabaseAsync(string userId)
-        {
-            var doc = await OAuthDB.GetCredentials(userId);
-
-            Credentials credentials = new Credentials();
-            credentials.TokenInternal = (string)doc["TokenInternal"];
-            credentials.TokenPublic = (string)doc["TokenPublic"];
-            credentials.RefreshToken = (string)doc["RefreshToken"];
-            credentials.ExpiresAt = DateTime.Parse((string)doc["ExpiresAt"]);
-            credentials.UserId = userId;
-
-            if (credentials.ExpiresAt < DateTime.Now)
-            {
-                await credentials.RefreshAsync();
             }
 
             return credentials;
@@ -201,9 +182,6 @@ namespace forgeSample.Controllers
             TokenPublic = credentialPublic.access_token;
             RefreshToken = credentialPublic.refresh_token;
             ExpiresAt = DateTime.Now.AddSeconds(credentialInternal.expires_in);
-
-            // update the record on our database for the tokens and refresh token
-            OAuthDB.Register(await GetUserId(this), JsonConvert.SerializeObject(this));
         }
 
         /// <summary>

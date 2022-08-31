@@ -76,7 +76,6 @@ $(document).ready(function () {
                     formData.append('fileToUpload', file);
                     formData.append('folderHref', node.id);
                     formData.append('connectionId', connectionId);
-                    console.log(connectionId, "one");
                     _this.value = '';
 
                     $.ajax({
