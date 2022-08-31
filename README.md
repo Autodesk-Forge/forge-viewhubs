@@ -23,7 +23,7 @@ The tree view will display personal enterprise (shared) hubs, with respective pr
 
 ## Live version
 
-[forgedatamanagement.herokuapp.com/](https://forgedatamanagement.herokuapp.com)
+[forgedatamanagement.herokuapp.com](https://forgedatamanagement.herokuapp.com)
 
 # Setup
 
@@ -39,7 +39,7 @@ The tree view will display personal enterprise (shared) hubs, with respective pr
 
 Clone this project or download it. It's recommended to install [GitHub desktop](https://desktop.github.com/). To clone it via command line, use the following (**Terminal** on MacOSX/Linux, **Git Shell** on Windows):
 
-    git clone https://github.com/autodesk-forge/data.management-csharp-sample
+    git clone https://github.com/Autodesk-Forge/forge-viewhubs
 
 **Visual Studio** (Windows):
 
@@ -47,11 +47,17 @@ Right-click on the project, then go to **Debug**. Adjust the settings as shown b
 
 ![](forgeSample/wwwroot/img/readme/visual_studio_settings.png)
 
-**Visual Sutdio Code** (Windows, MacOS):
+**Visual Code** (Windows, MacOS):
 
 Open the folder, at the bottom-right, select **Yes** and **Restore**. This restores the packages (e.g. Autodesk.Forge) and creates the launch.json file. See *Tips & Tricks* for .NET Core on MacOS.
 
 ![](forgeSample/wwwroot/img/readme/visual_code_restore.png)
+
+**ngrok**
+
+For webhooks service to send notifications to your localhost server, you may want to use ngrok. Check this link on [how to configure ngrok](https://forge.autodesk.com/en/docs/webhooks/v1/tutorials/configuring-your-server/). You can find more information on about ngrok [here](https://ngrok.com).
+
+**Environment variables**
 
 At the `.vscode\launch.json`, find the env vars and add your Forge Client ID, Secret and callback URL. Also define the `ASPNETCORE_URLS` variable. The end result should be as shown below:
 
@@ -62,16 +68,9 @@ At the `.vscode\launch.json`, find the env vars and add your Forge Client ID, Se
     "FORGE_CLIENT_ID": "your id here",
     "FORGE_CLIENT_SECRET": "your secret here",
     "FORGE_CALLBACK_URL": "http://localhost:3000/api/forge/callback/oauth",
-    "FORGE_WEBHOOK_URL": "your callback url", e.g https://34e2-105-27-239-221.in.ngrok.io 
+    "FORGE_WEBHOOK_URL": "your ngrok address", e.g https://34e2-105-27-239-221.in.ngrok.io 
 },
 ```
-
-## Configure ngrok
-
-For webhooks service to send notifications to your localhost server, you may want to use ngrok. Check this link on [how to configure ngrok](https://forge.autodesk.com/en/docs/webhooks/v1/tutorials/configuring-your-server/).
-
-You can find more information on about ngrok [here](https://ngrok.com).
-
 
 ## Deployment
 
