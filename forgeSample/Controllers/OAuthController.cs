@@ -55,7 +55,6 @@ namespace forgeSample.Controllers
         public string GetOAuthURL()
         {
             // prepare the sign in URL
-            Scope[] scopes = { Scope.DataRead };
             ThreeLeggedApi _threeLeggedApi = new ThreeLeggedApi();
             string oauthUrl = _threeLeggedApi.Authorize(
               Credentials.GetAppSetting("FORGE_CLIENT_ID"),

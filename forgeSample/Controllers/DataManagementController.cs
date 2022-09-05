@@ -344,19 +344,24 @@ namespace forgeSample.Controllers
             string folderId = hrefParams[hrefParams.Length - 1];
 
             // prepare storage
-            ProjectsApi projectApi = new ProjectsApi();
-            projectApi.Configuration.AccessToken = Credentials.TokenInternal;
-            StorageRelationshipsTargetData storageRelData = new StorageRelationshipsTargetData(StorageRelationshipsTargetData.TypeEnum.Folders, folderId);
-            CreateStorageDataRelationshipsTarget storageTarget = new CreateStorageDataRelationshipsTarget(storageRelData);
-            CreateStorageDataRelationships storageRel = new CreateStorageDataRelationships(storageTarget);
-            BaseAttributesExtensionObject attributes = new BaseAttributesExtensionObject(string.Empty, string.Empty, new JsonApiLink(string.Empty), null);
-            CreateStorageDataAttributes storageAtt = new CreateStorageDataAttributes(input.fileToUpload.FileName, attributes);
-            CreateStorageData storageData = new CreateStorageData(CreateStorageData.TypeEnum.Objects, storageAtt, storageRel);
-            CreateStorage storage = new CreateStorage(new JsonApiVersionJsonapi(JsonApiVersionJsonapi.VersionEnum._0), storageData);
-            dynamic storageCreated = await projectApi.PostStorageAsync(projectId, storage);
+            dynamic storageCreated = null;
+            try {
+                ProjectsApi projectApi = new ProjectsApi ();
+                projectApi.Configuration.AccessToken = Credentials.TokenInternal;
+                StorageRelationshipsTargetData storageRelData = new StorageRelationshipsTargetData (StorageRelationshipsTargetData.TypeEnum.Folders, folderId);
+                CreateStorageDataRelationshipsTarget storageTarget = new CreateStorageDataRelationshipsTarget (storageRelData);
+                CreateStorageDataRelationships storageRel = new CreateStorageDataRelationships (storageTarget);
+                CreateStorageDataAttributes storageAtt = new CreateStorageDataAttributes (input.fileToUpload.FileName, null);
+                CreateStorageData storageData = new CreateStorageData (CreateStorageData.TypeEnum.Objects, storageAtt, storageRel);
+                CreateStorage storage = new CreateStorage (new JsonApiVersionJsonapi (JsonApiVersionJsonapi.VersionEnum._0), storageData);
+                storageCreated = await projectApi.PostStorageAsync (projectId, storage);
+            } catch ( Exception ex ) {
+                Console.WriteLine (ex.Message);
+                return (null);
+			}
 
-            string[] storageIdParams = ((string)storageCreated.data.id).Split('/');
-            string[] bucketKeyParams = storageIdParams[storageIdParams.Length - 2].Split(':');
+            string [] storageIdParams = ((string)storageCreated.data.id).Split('/');
+            string [] bucketKeyParams = storageIdParams[storageIdParams.Length - 2].Split(':');
             string bucketKey = bucketKeyParams[bucketKeyParams.Length - 1];
             string objectName = storageIdParams[storageIdParams.Length - 1];
 
@@ -364,50 +369,28 @@ namespace forgeSample.Controllers
             ObjectsApi objects = new ObjectsApi();
             objects.Configuration.AccessToken = Credentials.TokenInternal;
 
-            // get file size
-            long fileSize = (new FileInfo(fileSavePath)).Length;
+			List<UploadItemDesc> results = null;
+			try {
+				using ( BinaryReader reader = new BinaryReader (new FileStream (fileSavePath, FileMode.Open)) ) {
+					results = await objects.uploadResources (
+						bucketKey,
+						new List<UploadItemDesc> () {
+							new UploadItemDesc (objectName, reader.BaseStream)
+						}
+					);
+				}
+			} catch ( Exception ex ) {
+				Console.WriteLine (ex.Message);
+				return (null);
+			}
 
-            // decide if upload direct or resumable (by chunks)
-            if (fileSize > UPLOAD_CHUNK_SIZE * 1024 * 1024) // upload in chunks
-            {
-                long chunkSize = 2 * 1024 * 1024; // 2 Mb
-                long numberOfChunks = (long)Math.Round((double)(fileSize / chunkSize)) + 1;
+			// decide if upload direct or resumable (by chunks)
 
-                long start = 0;
-                chunkSize = (numberOfChunks > 1 ? chunkSize : fileSize);
-                long end = chunkSize;
-                string sessionId = Guid.NewGuid().ToString();
-
-                // upload one chunk at a time
-                using (BinaryReader reader = new BinaryReader(new FileStream(fileSavePath, FileMode.Open)))
-                {
-                    for (int chunkIndex = 0; chunkIndex < numberOfChunks; chunkIndex++)
-                    {
-                        string range = string.Format("bytes {0}-{1}/{2}", start, end, fileSize);
-
-                        long numberOfBytes = chunkSize + 1;
-                        byte[] fileBytes = new byte[numberOfBytes];
-                        MemoryStream memoryStream = new MemoryStream(fileBytes);
-                        reader.BaseStream.Seek((int)start, SeekOrigin.Begin);
-                        int count = reader.Read(fileBytes, 0, (int)numberOfBytes);
-                        memoryStream.Write(fileBytes, 0, (int)numberOfBytes);
-                        memoryStream.Position = 0;
-
-                        await objects.UploadChunkAsync(bucketKey, objectName, (int)numberOfBytes, range, sessionId, memoryStream);
-
-                        start = end + 1;
-                        chunkSize = ((start + chunkSize > fileSize) ? fileSize - start - 1 : chunkSize);
-                        end = start + chunkSize;
-                    }
-                }
-            }
-            else // upload in a single call
-            {
-                using (StreamReader streamReader = new StreamReader(fileSavePath))
-                {
-                    await objects.UploadObjectAsync(bucketKey, objectName, (int)streamReader.BaseStream.Length, streamReader.BaseStream, "application/octet-stream");
-                }
-            }
+			//dynamic aa = null;
+   //             using ( StreamReader streamReader = new StreamReader (fileSavePath) ) {
+   //                 aa = await objects.UploadObjectAsync (bucketKey, objectName, (int)streamReader.BaseStream.Length, streamReader.BaseStream, "application/octet-stream");
+   //             }
+            
 
             // cleanup
             string fileName = input.fileToUpload.FileName;
@@ -426,20 +409,25 @@ namespace forgeSample.Controllers
             //create webhook
             string workflowId = "dm-extraction-finished";
             IList<GetHookData.Hook> hooks = await Hooks(SupportedEvents.ExtractionFinished);
+            bool found = false;
             foreach (GetHookData.Hook hook in hooks)
             {
                 if (hook.scope.workflow != workflowId) continue; // not this webhook, skip
-                if (hook.callbackUrl == CallbackUrl) continue; // already here, no need to create or delete
+                if (hook.callbackUrl == CallbackUrl) {
+                    found = true;
+                    continue; // already here, no need to create or delete
+                }
 
                 // if there is already a hook for the same workflowId, but pointing to a different
                 // callbackUrl, let's delete and create again, in order to update the callbackUrl
-                RestRequest request = new RestRequest("/webhooks/v1/systems/data/events/{supportedEvent}/hooks/{webhookId}", Method.DELETE);
+                RestRequest request = new RestRequest("/webhooks/v1/systems/data/events/{supportedEvent}/hooks/{webhookId}", Method.Delete);
                 request.AddUrlSegment("supportedEvent", ConvertToString(SupportedEvents.ExtractionFinished));
                 request.AddUrlSegment("webhookId", hook.hookId);
                 request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
-                IRestResponse response = await client.ExecuteAsync(request);
+                RestResponse response = await client.ExecuteAsync(request);
             }
-            await CreateWebHookAsync(workflowId, ConvertToString(SupportedEvents.ExtractionFinished), CallbackUrl);
+            if ( !found )
+                await CreateWebHookAsync(workflowId, ConvertToString(SupportedEvents.ExtractionFinished), CallbackUrl);
 
             MetaWorkflowAttributeObject metaWorkflowAttributeObject = new MetaWorkflowAttributeObject(input.connectionId);
             MetaObject metaObject = new MetaObject(workflowId, metaWorkflowAttributeObject);
@@ -613,7 +601,10 @@ namespace forgeSample.Controllers
             request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
             request.AddHeader("x-ads-region", "US");
             request.AddUrlSegment("supportedEvent", supportedEvent);
-            request.AddJsonBody(jsonObject);
+            //request.AddJsonBody(jsonObject);
+            //request.AddParameter (new BodyParameter("", jsonObject, "application/json")); // ContentType.Binary
+            RestRequestExtensions.AddJsonBody (request, jsonObject);
+
             var response = client.Post(request);
         }
 
@@ -641,10 +632,10 @@ namespace forgeSample.Controllers
             Credentials = await Credentials.FromSessionAsync(base.Request.Cookies, Response.Cookies);
             if (Credentials == null) { return null; }
 
-            RestRequest request = new RestRequest("webhooks/v1/systems/derivative/events/{supportedEvent}/hooks", Method.GET);
+            RestRequest request = new RestRequest("webhooks/v1/systems/derivative/events/{supportedEvent}/hooks", Method.Get);
             request.AddHeader("Authorization", "Bearer " + Credentials.TokenInternal);
             request.AddUrlSegment("supportedEvent", ConvertToString(ev));
-            IRestResponse<GetHookData> response = await client.ExecuteAsync<GetHookData>(request);
+            RestResponse<GetHookData> response = await client.ExecuteAsync<GetHookData>(request);
 
             return response.Data.data;
         }
